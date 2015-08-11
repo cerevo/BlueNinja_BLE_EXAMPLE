@@ -63,20 +63,20 @@ const uint8_t tz01_tracker_di_model_string[] = "CDP-TZ01B";
 /* BLElib unique id. */
 enum {
     BLE_GATT_UNIQUE_ID_GAP_SERVICE = 0,
-	BLE_GATT_UNIQUE_ID_GAP_DEVICE_NAME,
-	BLE_GATT_UNIQUE_ID_GAP_APPEARANCE,
-	BLE_GATT_UNIQUE_ID_DI_SERVICE,
-	BLE_GATT_UNIQUE_ID_DI_MANUF_NAME,
-	BLE_GATT_UNIQUE_ID_DI_FW_VERSION,
-	BLE_GATT_UNIQUE_ID_DI_SW_VERSION,
-	BLE_GATT_UNIQUE_ID_DI_MODEL_STRING,
-	BLE_GATT_UNIQUE_ID_TZ01_SERVICE,
-	BLE_GATT_UNIQUE_ID_TZ01_GYRO,
+    BLE_GATT_UNIQUE_ID_GAP_DEVICE_NAME,
+    BLE_GATT_UNIQUE_ID_GAP_APPEARANCE,
+    BLE_GATT_UNIQUE_ID_DI_SERVICE,
+    BLE_GATT_UNIQUE_ID_DI_MANUF_NAME,
+    BLE_GATT_UNIQUE_ID_DI_FW_VERSION,
+    BLE_GATT_UNIQUE_ID_DI_SW_VERSION,
+    BLE_GATT_UNIQUE_ID_DI_MODEL_STRING,
+    BLE_GATT_UNIQUE_ID_TZ01_SERVICE,
+    BLE_GATT_UNIQUE_ID_TZ01_GYRO,
     BLE_GATT_UNIQUE_ID_TZ01_GYRO_DESC,
-	BLE_GATT_UNIQUE_ID_TZ01_ACCEL,
-	BLE_GATT_UNIQUE_ID_TZ01_ACCEL_DESC,
-	BLE_GATT_UNIQUE_ID_TZ01_MAGNETOMETER,
-	BLE_GATT_UNIQUE_ID_TZ01_MAGNETOMETER_DESC,
+    BLE_GATT_UNIQUE_ID_TZ01_ACCEL,
+    BLE_GATT_UNIQUE_ID_TZ01_ACCEL_DESC,
+    BLE_GATT_UNIQUE_ID_TZ01_MAGNETOMETER,
+    BLE_GATT_UNIQUE_ID_TZ01_MAGNETOMETER_DESC,
     BLE_GATT_UNIQUE_ID_TZ01_AXISANGLE,
     BLE_GATT_UNIQUE_ID_TZ01_AXISANGLE_DESC,
     BLE_GATT_UNIQUE_ID_TZ01_TEMPERATURE,
@@ -87,62 +87,62 @@ enum {
 
 /* GAP */
 const BLELib_Characteristics gap_device_name = {
-	BLE_GATT_UNIQUE_ID_GAP_DEVICE_NAME, 0x2a00, 0, BLELIB_UUID_16,
-	BLELIB_PROPERTY_READ,
-	BLELIB_PERMISSION_READ | BLELIB_PERMISSION_WRITE,
-	tz01_tracker_gap_device_name, sizeof(tz01_tracker_gap_device_name),
-	NULL, 0
+    BLE_GATT_UNIQUE_ID_GAP_DEVICE_NAME, 0x2a00, 0, BLELIB_UUID_16,
+    BLELIB_PROPERTY_READ,
+    BLELIB_PERMISSION_READ | BLELIB_PERMISSION_WRITE,
+    tz01_tracker_gap_device_name, sizeof(tz01_tracker_gap_device_name),
+    NULL, 0
 };
 const BLELib_Characteristics gap_appearance = {
-	BLE_GATT_UNIQUE_ID_GAP_APPEARANCE, 0x2a01, 0, BLELIB_UUID_16,
-	BLELIB_PROPERTY_READ,
-	BLELIB_PERMISSION_READ,
-	tz01_tracker_gap_appearance, sizeof(tz01_tracker_gap_appearance),
-	NULL, 0
+    BLE_GATT_UNIQUE_ID_GAP_APPEARANCE, 0x2a01, 0, BLELIB_UUID_16,
+    BLELIB_PROPERTY_READ,
+    BLELIB_PERMISSION_READ,
+    tz01_tracker_gap_appearance, sizeof(tz01_tracker_gap_appearance),
+    NULL, 0
 };
 const BLELib_Characteristics *const gap_characteristics[] = { &gap_device_name, &gap_appearance };
 const BLELib_Service gap_service = {
-	BLE_GATT_UNIQUE_ID_GAP_SERVICE, 0x1800, 0, BLELIB_UUID_16,
-	true, NULL, 0,
-	gap_characteristics, 2
+    BLE_GATT_UNIQUE_ID_GAP_SERVICE, 0x1800, 0, BLELIB_UUID_16,
+    true, NULL, 0,
+    gap_characteristics, 2
 };
 
 /* DIS(Device Informatin Service) */
 const BLELib_Characteristics di_manuf_name = {
-	BLE_GATT_UNIQUE_ID_DI_MANUF_NAME, 0x2a29, 0, BLELIB_UUID_16,
-	BLELIB_PROPERTY_READ,
-	BLELIB_PERMISSION_READ,
-	tz01_tracker_di_manufname, sizeof(tz01_tracker_di_manufname),
-	NULL, 0
+    BLE_GATT_UNIQUE_ID_DI_MANUF_NAME, 0x2a29, 0, BLELIB_UUID_16,
+    BLELIB_PROPERTY_READ,
+    BLELIB_PERMISSION_READ,
+    tz01_tracker_di_manufname, sizeof(tz01_tracker_di_manufname),
+    NULL, 0
 };
 const BLELib_Characteristics di_fw_version = {
-	BLE_GATT_UNIQUE_ID_DI_FW_VERSION, 0x2a26, 0, BLELIB_UUID_16,
-	BLELIB_PROPERTY_READ,
-	BLELIB_PERMISSION_READ,
-	tz01_tracker_di_fw_version, sizeof(tz01_tracker_di_fw_version),
-	NULL, 0
+    BLE_GATT_UNIQUE_ID_DI_FW_VERSION, 0x2a26, 0, BLELIB_UUID_16,
+    BLELIB_PROPERTY_READ,
+    BLELIB_PERMISSION_READ,
+    tz01_tracker_di_fw_version, sizeof(tz01_tracker_di_fw_version),
+    NULL, 0
 };
 const BLELib_Characteristics di_sw_version = {
-	BLE_GATT_UNIQUE_ID_DI_SW_VERSION, 0x2a28, 0, BLELIB_UUID_16,
-	BLELIB_PROPERTY_READ,
-	BLELIB_PERMISSION_READ,
-	tz01_tracker_di_sw_version, sizeof(tz01_tracker_di_sw_version),
-	NULL, 0
+    BLE_GATT_UNIQUE_ID_DI_SW_VERSION, 0x2a28, 0, BLELIB_UUID_16,
+    BLELIB_PROPERTY_READ,
+    BLELIB_PERMISSION_READ,
+    tz01_tracker_di_sw_version, sizeof(tz01_tracker_di_sw_version),
+    NULL, 0
 };
 const BLELib_Characteristics di_model_string = {
-	BLE_GATT_UNIQUE_ID_DI_MODEL_STRING, 0x2a24, 0, BLELIB_UUID_16,
-	BLELIB_PROPERTY_READ,
-	BLELIB_PERMISSION_READ,
-	tz01_tracker_di_model_string, sizeof(tz01_tracker_di_model_string),
-	NULL, 0
+    BLE_GATT_UNIQUE_ID_DI_MODEL_STRING, 0x2a24, 0, BLELIB_UUID_16,
+    BLELIB_PROPERTY_READ,
+    BLELIB_PERMISSION_READ,
+    tz01_tracker_di_model_string, sizeof(tz01_tracker_di_model_string),
+    NULL, 0
 };
 const BLELib_Characteristics *const di_characteristics[] = {
-	&di_manuf_name, &di_fw_version, &di_sw_version, &di_model_string
+    &di_manuf_name, &di_fw_version, &di_sw_version, &di_model_string
 };
 const BLELib_Service di_service = {
-	BLE_GATT_UNIQUE_ID_DI_SERVICE, 0x180a, 0, BLELIB_UUID_16,
-	true, NULL, 0,
-	di_characteristics, 4
+    BLE_GATT_UNIQUE_ID_DI_SERVICE, 0x180a, 0, BLELIB_UUID_16,
+    true, NULL, 0,
+    di_characteristics, 4
 };
 
 /* TZ1 motion tracker (GATT base profile) */
@@ -163,9 +163,9 @@ static uint8_t tz01_airp_desc[] = { 0x00, 0x00 };
 
 /* 9Axis Sensor: GYRO */
 const BLELib_Descriptor tz01_tracker_gyro_desc = {
-	BLE_GATT_UNIQUE_ID_TZ01_GYRO_DESC, 0x2902, 0, BLELIB_UUID_16,
-	BLELIB_PERMISSION_READ | BLELIB_PERMISSION_WRITE,
-	tz01_gyro_desc, sizeof(tz01_gyro_desc)
+    BLE_GATT_UNIQUE_ID_TZ01_GYRO_DESC, 0x2902, 0, BLELIB_UUID_16,
+    BLELIB_PERMISSION_READ | BLELIB_PERMISSION_WRITE,
+    tz01_gyro_desc, sizeof(tz01_gyro_desc)
 };
 const BLELib_Descriptor *const tz01_tracker_gyro_descriptors[] = { &tz01_tracker_gyro_desc };
 const BLELib_Characteristics tz01_tracker_gyro = {
@@ -178,9 +178,9 @@ const BLELib_Characteristics tz01_tracker_gyro = {
 
 /* 9Axis Sensor: ACCEL */
 const BLELib_Descriptor tz01_tracker_acel_desc = {
-	BLE_GATT_UNIQUE_ID_TZ01_ACCEL_DESC, 0x2902, 0, BLELIB_UUID_16,
-	BLELIB_PERMISSION_READ | BLELIB_PERMISSION_WRITE,
-	tz01_acel_desc, sizeof(tz01_acel_desc)
+    BLE_GATT_UNIQUE_ID_TZ01_ACCEL_DESC, 0x2902, 0, BLELIB_UUID_16,
+    BLELIB_PERMISSION_READ | BLELIB_PERMISSION_WRITE,
+    tz01_acel_desc, sizeof(tz01_acel_desc)
 };
 const BLELib_Descriptor *const tz01_tracker_acel_descriptors[] = { &tz01_tracker_acel_desc };
 const BLELib_Characteristics tz01_tracker_acel = {
@@ -193,9 +193,9 @@ const BLELib_Characteristics tz01_tracker_acel = {
 
 /* 9Axis Sensor: Magnetometer */
 const BLELib_Descriptor tz01_tracker_magm_desc = {
-	BLE_GATT_UNIQUE_ID_TZ01_MAGNETOMETER_DESC, 0x2902, 0, BLELIB_UUID_16,
-	BLELIB_PERMISSION_READ | BLELIB_PERMISSION_WRITE,
-	tz01_magm_desc, sizeof(tz01_magm_desc)
+    BLE_GATT_UNIQUE_ID_TZ01_MAGNETOMETER_DESC, 0x2902, 0, BLELIB_UUID_16,
+    BLELIB_PERMISSION_READ | BLELIB_PERMISSION_WRITE,
+    tz01_magm_desc, sizeof(tz01_magm_desc)
 };
 const BLELib_Descriptor *const tz01_tracker_magm_descriptors[] = { &tz01_tracker_magm_desc };
 const BLELib_Characteristics tz01_tracker_magm = {
@@ -223,9 +223,9 @@ const BLELib_Characteristics tz01_tracker_axangl = {
 
 /* Temperature */
 const BLELib_Descriptor tz01_tracker_temp_desc = {
-	BLE_GATT_UNIQUE_ID_TZ01_TEMPERATURE_DESC, 0x2902, 0, BLELIB_UUID_16,
-	BLELIB_PERMISSION_READ | BLELIB_PERMISSION_WRITE,
-	tz01_temp_desc, sizeof(tz01_temp_desc)
+    BLE_GATT_UNIQUE_ID_TZ01_TEMPERATURE_DESC, 0x2902, 0, BLELIB_UUID_16,
+    BLELIB_PERMISSION_READ | BLELIB_PERMISSION_WRITE,
+    tz01_temp_desc, sizeof(tz01_temp_desc)
 };
 const BLELib_Descriptor *const tz01_tracker_temp_descriptors[] = { &tz01_tracker_temp_desc };
 const BLELib_Characteristics tz01_tracker_temp = {
@@ -238,9 +238,9 @@ const BLELib_Characteristics tz01_tracker_temp = {
 
 /* Airpressure */
 const BLELib_Descriptor tz01_tracker_airp_desc = {
-	BLE_GATT_UNIQUE_ID_TZ01_AIRPRESSURE_DESC, 0x2902, 0, BLELIB_UUID_16,
-	BLELIB_PERMISSION_READ | BLELIB_PERMISSION_WRITE,
-	tz01_airp_desc, sizeof(tz01_airp_desc)
+    BLE_GATT_UNIQUE_ID_TZ01_AIRPRESSURE_DESC, 0x2902, 0, BLELIB_UUID_16,
+    BLELIB_PERMISSION_READ | BLELIB_PERMISSION_WRITE,
+    tz01_airp_desc, sizeof(tz01_airp_desc)
 };
 const BLELib_Descriptor *const tz01_tracker_airp_descriptors[] = { &tz01_tracker_airp_desc };
 const BLELib_Characteristics tz01_tracker_airp = {
@@ -258,58 +258,51 @@ const BLELib_Characteristics *const tz01_tracker_characteristics[] = {
 };
 /* TZ1 Tracker service */
 const BLELib_Service tz01_tracker_service = {
-	BLE_GATT_UNIQUE_ID_TZ01_SERVICE, 0x91825f82ff67e8f8, 0xd43a02000e5f4a80, BLELIB_UUID_128,
-	true, NULL, 0,
-	tz01_tracker_characteristics, 6
+    BLE_GATT_UNIQUE_ID_TZ01_SERVICE, 0x91825f82ff67e8f8, 0xd43a02000e5f4a80, BLELIB_UUID_128,
+    true, NULL, 0,
+    tz01_tracker_characteristics, 6
 };
 
 /* Service list */
 const BLELib_Service *const tz01_tracker_service_list[] = {
-	&gap_service, &di_service, &tz01_tracker_service
+    &gap_service, &di_service, &tz01_tracker_service
 };
 
 /*- INDICATION data -*/
 uint8_t tz01_tracker_advertising_data[] = {
-	0x02, /* length of this data */
-	0x01, /* AD type = Flags */
-	0x06, /* LE General Discoverable Mode = 0x02 */
-	/* BR/EDR Not Supported (i.e. bit 37
-	 * of LMP Extended Feature bits Page 0) = 0x04 */
+    0x02, /* length of this data */
+    0x01, /* AD type = Flags */
+    0x06, /* LE General Discoverable Mode = 0x02 */
+    /* BR/EDR Not Supported (i.e. bit 37
+     * of LMP Extended Feature bits Page 0) = 0x04 */
 
-	0x03, /* length of this data */
-	0x08, /* AD type = Short local name */
-	'T',  /* (T) */
-	'Z',  /* (Z) */
+    0x03, /* length of this data */
+    0x08, /* AD type = Short local name */
+    'T',  /* (T) */
+    'Z',  /* (Z) */
 
-	0x05, /* length of this data */
-	0x03, /* AD type = Complete list of 16-bit UUIDs available */
-	0x00, /* Generic Access Profile Service 1800 */
-	0x18,
-	0x0A, /* Device Information Service 180A */
-	0x18,
-/* Manufacrurer Data sample.
-	0x04,
-	0xff,
-	0x00,
-	0x04,
-	0x5a,
-*/
+    0x05, /* length of this data */
+    0x03, /* AD type = Complete list of 16-bit UUIDs available */
+    0x00, /* Generic Access Profile Service 1800 */
+    0x18,
+    0x0A, /* Device Information Service 180A */
+    0x18,
 };
 
 uint8_t tz01_tracker_scan_resp_data[] = {
-	0x02, /* length of this data */
-	0x01, /* AD type = Flags */
-	0x06, /* LE General Discoverable Mode = 0x02 */
-	/* BR/EDR Not Supported (i.e. bit 37
-	 * of LMP Extended Feature bits Page 0) = 0x04 */
+    0x02, /* length of this data */
+    0x01, /* AD type = Flags */
+    0x06, /* LE General Discoverable Mode = 0x02 */
+    /* BR/EDR Not Supported (i.e. bit 37
+     * of LMP Extended Feature bits Page 0) = 0x04 */
 
-	0x02, /* length of this data */
-	0x0A, /* AD type = TX Power Level (1 byte) */
-	0x00, /* 0dB (-127...127 = 0x81...0x7F) */
+    0x02, /* length of this data */
+    0x0A, /* AD type = TX Power Level (1 byte) */
+    0x00, /* 0dB (-127...127 = 0x81...0x7F) */
 
-	0x0a, /* length of this data */
-	0x09, /* AD type = Complete local name */
-	'C', 'D', 'P', '-', 'T', 'Z', '0', '1', 'B' /* CDP-TZ01B */
+    0x0a, /* length of this data */
+    0x09, /* AD type = Complete local name */
+    'C', 'D', 'P', '-', 'T', 'Z', '0', '1', 'B' /* CDP-TZ01B */
 };
 
 /*=== TZ1 motion tracker application ===*/
@@ -332,51 +325,6 @@ static bool tz01_tracker_notif_airpressure_enable  = false;
 
 /* NOTIFICATION */
 static uint8_t notify_dat[12];
-void tz01_tracker_notification(void const *arg)
-{
-    /*
-    if (tz01_tracker_notif_gyro_enable) {
-        memcpy(&notify_dat[0], maesure_gyro[0].bytes, 4);
-        memcpy(&notify_dat[4], maesure_gyro[1].bytes, 4);
-        memcpy(&notify_dat[8], maesure_gyro[2].bytes, 4);
-        BLELib_notifyValue(BLE_GATT_UNIQUE_ID_TZ01_GYRO, notify_dat, 12);
-    }
-
-    if (tz01_tracker_notif_accel_enable) {
-        memcpy(&notify_dat[0], maesure_acel[0].bytes, 4);
-        memcpy(&notify_dat[4], maesure_acel[1].bytes, 4);
-        memcpy(&notify_dat[8], maesure_acel[2].bytes, 4);
-        BLELib_notifyValue(BLE_GATT_UNIQUE_ID_TZ01_ACCEL, notify_dat, 12);
-    }
-
-    if (tz01_tracker_notif_magnetometer_enable) {
-        memcpy(&notify_dat[0], maesure_magm[0].bytes, 4);
-        memcpy(&notify_dat[4], maesure_magm[1].bytes, 4);
-        memcpy(&notify_dat[8], maesure_magm[2].bytes, 4);
-        BLELib_notifyValue(BLE_GATT_UNIQUE_ID_TZ01_MAGNETOMETER, notify_dat, 12);
-    }
-
-    if (tz01_tracker_notif_axis_angle_enable) {
-        memcpy(&notify_dat[0], maesure_axangl[0].bytes, 4);
-        memcpy(&notify_dat[4], maesure_axangl[1].bytes, 4);
-        BLELib_notifyValue(BLE_GATT_UNIQUE_ID_TZ01_AXISANGLE, notify_dat, 8);
-    }
-
-    if (tz01_tracker_notif_temperature_enable) {
-        BLELib_notifyValue(BLE_GATT_UNIQUE_ID_TZ01_TEMPERATURE, maesure_temp.bytes, 4);
-    }
-
-    if (tz01_tracker_notif_airpressure_enable) {
-        BLELib_notifyValue(BLE_GATT_UNIQUE_ID_TZ01_AIRPRESSURE, maesure_airp.bytes, 4);
-    }
-*/
-    /* BLE Connection heart beat. */
-/*
-    twicSetLed(TWIC_LED_GPIO_LED3, led_blink);
-    led_blink = led_blink ? false : true;
-*/
-}
-
 /* Eliminate chatter */
 void tz01_tracker_enable_button(void const *arg)
 {
@@ -384,8 +332,6 @@ void tz01_tracker_enable_button(void const *arg)
 }
 
 /* TimerFakeAlarm */
-//tz1smHalTimerId tz01_tracker_timer_id_notif;
-//TZ1SM_HAL_TIMER_INIT(TZ01_TRACKER_TIMER_NOTIF, tz01_tracker_notification);
 tz1smHalTimerId tz01_tracker_timer_id_enable_button;
 TZ1SM_HAL_TIMER_INIT(TZ01_TRACKER_ENABLE_BUTTON, tz01_tracker_enable_button);
 
@@ -394,7 +340,7 @@ static uint64_t central_bdaddr;
 /*= BLElib callback functions =*/
 void connectionCompleteCb(const uint8_t status, const bool master, const uint64_t bdaddr, const uint16_t conn_interval)
 {
-	central_bdaddr = bdaddr;
+    central_bdaddr = bdaddr;
 
     //Notification disabled.
     tz01_tracker_notif_gyro_enable = false;
@@ -424,17 +370,16 @@ void disconnectCb(const uint8_t status, const uint8_t reason)
     tz01_tracker_notif_temperature_enable = false;
     tz01_tracker_notif_airpressure_enable = false;
 
-    //tz1smHalTimerStop(tz01_tracker_timer_id_notif);
     TZ01_system_tick_stop(USRTICK_NO_BLE_MAIN);
 }
 
 BLELib_RespForDemand mtuExchangeDemandCb(const uint16_t client_rx_mtu_size, uint16_t *resp_mtu_size)
 {
     uint8_t msg[64];
-	*resp_mtu_size = TZ01_TRACKER_MTU;
+    *resp_mtu_size = TZ01_TRACKER_MTU;
     sprintf(msg, "client_rx_mtu_size=%d, resp_mtu_size=%d\r\n", client_rx_mtu_size, *resp_mtu_size);
     TZ01_console_puts(msg);
-	return BLELIB_DEMAND_ACCEPT;
+    return BLELIB_DEMAND_ACCEPT;
 }
 
 void mtuExchangeResultCb(const uint8_t status, const uint16_t negotiated_mtu_size)
@@ -462,7 +407,7 @@ void queuedWriteCompleteCb(const uint8_t status)
 
 BLELib_RespForDemand readoutDemandCb(const uint8_t *const unique_id_array, const uint8_t unique_id_num)
 {
-	return BLELIB_DEMAND_ACCEPT;
+    return BLELIB_DEMAND_ACCEPT;
 }
 
 BLELib_RespForDemand writeinDemandCb(const uint8_t unique_id, const uint8_t *const value, const uint8_t value_len)
@@ -489,7 +434,7 @@ BLELib_RespForDemand writeinDemandCb(const uint8_t unique_id, const uint8_t *con
             tz01_tracker_notif_airpressure_enable = (value[0] != 0);
             break;
     }
-	return BLELIB_DEMAND_ACCEPT;
+    return BLELIB_DEMAND_ACCEPT;
 }
 
 void writeinPostCb(const uint8_t unique_id, const uint8_t *const value, const uint8_t value_len)
@@ -498,32 +443,32 @@ void writeinPostCb(const uint8_t unique_id, const uint8_t *const value, const ui
 
 void isrNewEventCb(void)
 {
-	/* this sample always call BLELib_run() */
+    /* this sample always call BLELib_run() */
 }
 
 void isrWakeupCb(void)
 {
-	/* this callback is not used currently */
+    /* this callback is not used currently */
 }
 
 BLELib_CommonCallbacks tz01_common_callbacks = {
-	connectionCompleteCb,
-	connectionUpdateCb,
-	mtuExchangeResultCb,
-	disconnectCb,
-	isrNewEventCb,
-	isrWakeupCb
+    connectionCompleteCb,
+    connectionUpdateCb,
+    mtuExchangeResultCb,
+    disconnectCb,
+    isrNewEventCb,
+    isrWakeupCb
   };
 
 BLELib_ServerCallbacks tz01_server_callbacks = {
-	mtuExchangeDemandCb,
-	notificationSentCb,
-	indicationConfirmCb,
-	updateCompleteCb,
-	queuedWriteCompleteCb,
-	readoutDemandCb,
-	writeinDemandCb,
-	writeinPostCb,
+    mtuExchangeDemandCb,
+    notificationSentCb,
+    indicationConfirmCb,
+    updateCompleteCb,
+    queuedWriteCompleteCb,
+    readoutDemandCb,
+    writeinDemandCb,
+    writeinPostCb,
   };
 
 
@@ -534,31 +479,27 @@ void rtc_periodic_handler(RTC_EVENT e)
 
 int ble_tracker_init(void)
 {
-	if (TZ1EM_STATUS_OK != tz1emInitializeSystem())
-	  return 1; /* Must not use UART for LOG before twicIfLeIoInitialize. */
+    if (TZ1EM_STATUS_OK != tz1emInitializeSystem())
+      return 1; /* Must not use UART for LOG before twicIfLeIoInitialize. */
 
-	/*
-	 * TimerFakeAlarm
-	 *
-	 */
     /*
-	tz01_tracker_timer_id_notif  = tz1smHalTimerCreate(
-		TZ1SM_HAL_TIMER(TZ01_TRACKER_TIMER_NOTIF), TZ1SM_HAL_TIMER_PERIODIC, NULL);
-    */
-	tz01_tracker_timer_id_enable_button = tz1smHalTimerCreate(
-		TZ1SM_HAL_TIMER(TZ01_TRACKER_ENABLE_BUTTON), TZ1SM_HAL_TIMER_ONCE, NULL);
+     * TimerFakeAlarm
+     *
+     */
+    tz01_tracker_timer_id_enable_button = tz1smHalTimerCreate(
+        TZ1SM_HAL_TIMER(TZ01_TRACKER_ENABLE_BUTTON), TZ1SM_HAL_TIMER_ONCE, NULL);
 
-	{
-		extern TZ10XX_DRIVER_RTC Driver_RTC;
-		const RTC_TIME now = {
-			55, 59, 11, 8, 6, 15, 1 /* 15-06-08(Mon) 11:59:55 */
-		};
-		Driver_RTC.Initialize();
-		Driver_RTC.SetTime(&now); /* Set current date and time */
-		Driver_RTC.SetPeriodicInterrupt(
+    {
+        extern TZ10XX_DRIVER_RTC Driver_RTC;
+        const RTC_TIME now = {
+            55, 59, 11, 8, 6, 15, 1 /* 15-06-08(Mon) 11:59:55 */
+        };
+        Driver_RTC.Initialize();
+        Driver_RTC.SetTime(&now); /* Set current date and time */
+        Driver_RTC.SetPeriodicInterrupt(
             RTC_PERIOD_EVERY_1_128_SECOND, rtc_periodic_handler
         );
-	}
+    }
 
     /* create random bdaddr */
     uint32_t randval;
@@ -569,17 +510,15 @@ int ble_tracker_init(void)
     Driver_RNG.Uninitialize();
     tz01_tracker_bdaddr |= (uint64_t)randval;
 
-	/* initialize BLELib */
+    /* initialize BLELib */
     int ret;
-	BLELib_initialize(tz01_tracker_bdaddr, BLELIB_BAUDRATE_2304, &tz01_common_callbacks, &tz01_server_callbacks, NULL);
-	ret = BLELib_registerService(tz01_tracker_service_list, 3);
-	BLELib_setLowPowerMode(BLELIB_LOWPOWER_ON);
+    BLELib_initialize(tz01_tracker_bdaddr, BLELIB_BAUDRATE_2304, &tz01_common_callbacks, &tz01_server_callbacks, NULL);
+    ret = BLELib_registerService(tz01_tracker_service_list, 3);
+    BLELib_setLowPowerMode(BLELIB_LOWPOWER_ON);
 
-	twicButtonInit();
-	twicLedInit();
-	twicButtonEnable();
-
-    //TZ01_system_tick_start(USRTICK_NO_BLE_MAIN, 500);
+    twicButtonInit();
+    twicLedInit();
+    twicButtonEnable();
 
     return ret;
 }
@@ -588,9 +527,9 @@ static uint8_t msg[80];
 int ble_tracker_run(const bool en_9axis, const bool en_airpressure)
 {
     int ret;
-	BLELib_State state;
-	bool has_event;
-	uint16_t button_state;
+    BLELib_State state;
+    bool has_event;
+    uint16_t button_state;
 
     button_state = twicButton();
     state = BLELib_getState();
