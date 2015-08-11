@@ -54,7 +54,8 @@ extern TZ10XX_DRIVER_GPIO Driver_GPIO;
  * @brief
  * Configuration LED I/O
  *
- */
+ * If the "TWIC_LED_GPIO_LED[1-5]" is defined in the tz1sm_config.h, this
+ * API can be used for the operation of LED. */
 uint8_t twicLedInit(void)
 {
   uint8_t ret;
@@ -89,8 +90,11 @@ uint8_t twicLedFinalize(void)
 /*
  * @brief
  * Read LED status
- * @return status (true:LED ON, false:LED OFF)
+ * @return status (true:The level of the GPIO teminal is Hi,
+ *                 false:The level of the GPIO teminal is Lo)
  *
+ * Read the GPIO terminal level of a LED.
+ * This API reads the level of the designated GPIO terminal.
  */
 bool twicReadLedStatus(const uint8_t num)
 {
@@ -105,6 +109,8 @@ bool twicReadLedStatus(const uint8_t num)
  * @brief
  * Set LED
  *
+ * Turn on or off a LED with the GPIO number.
+ * This API sets the parameter "out" to the designated GPIO terminal.
  */
 void twicSetLed(const uint8_t num, const bool out)
 {

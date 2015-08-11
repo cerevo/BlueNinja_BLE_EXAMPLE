@@ -14,13 +14,13 @@
  * WHETHER EXPRESS, IMPLIED OR, STATUTORY AND DISCLAIMS ANY AND ALL
  * IMPLIED WARRANTIES OF MERCHANTABILITY, SATISFACTORY QUALITY, NON
  * INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE.
- *
+ * 
  * THE SOURCE CODE AND DOCUMENTATION MAY INCLUDE ERRORS. TOSHIBA
  * CORPORATION RESERVES THE RIGHT TO INCORPORATE MODIFICATIONS TO THE
  * SOURCE CODE IN LATER REVISIONS OF IT, AND TO MAKE IMPROVEMENTS OR
  * CHANGES IN THE DOCUMENTATION OR THE PRODUCTS OR TECHNOLOGIES
  * DESCRIBED THEREIN AT ANY TIME.
- *
+ * 
  * TOSHIBA CORPORATION SHALL NOT BE LIABLE FOR ANY DIRECT, INDIRECT OR
  * CONSEQUENTIAL DAMAGE OR LIABILITY ARISING FROM YOUR USE OF THE
  * SOURCE CODE OR ANY DOCUMENTATION, INCLUDING BUT NOT LIMITED TO,
@@ -48,10 +48,22 @@ extern "C" {
 //   <q> enable debug print
 #define BLELIB_DEBUG_PRINT (1)
 
+//   <o> maximum attribute number <1-255>
+#define BLELIB_ENTRY_SIZE_MAX 	(40)
+#if (BLELIB_ENTRY_SIZE_MAX < 1) || (BLELIB_ENTRY_SIZE_MAX > 255)
+#error BLELIB_ENTRY_SIZE_MAX must be in range from 1 to 255
+#endif
+	
 //   <o> inner buffer number <1-255>
 #define BLELIB_INNER_BUF_NUM (8)
 #if (BLELIB_INNER_BUF_NUM < 1) || (BLELIB_INNER_BUF_NUM > 255)
 #error BLELIB_INNER_BUF_NUM must be in range from 1 to 255
+#endif
+
+//	<o>	multiple read maximum number <1-255>
+#define BLELIB_MULTIPLE_READ_MAX_NUM	(10)
+#if (BLELIB_MULTIPLE_READ_MAX_NUM < 1) || (BLELIB_MULTIPLE_READ_MAX_NUM > 255)
+#error BLELIB_MULTIPLE_READ_MAX_NUM must be in range from 1 to 255
 #endif
 
 //   <o> punctuation of UART2(us) <3-8192>
@@ -83,7 +95,7 @@ extern "C" {
 #define BLELIB_ADVERTISING_TYPE TWIC_ADV_TYPE_SCAN_IND
 #elif BLELIB_ADVERTISING_TYPE_NUM == 3
 #define BLELIB_ADVERTISING_TYPE TWIC_ADV_TYPE_NONCONN_IND
-#else
+#else 
 #error Not supported Advertising type
 #endif
 //   <h> Advertising channel
@@ -98,8 +110,8 @@ extern "C" {
 #error At least one channel must be specified
 #endif
 // </h>
-
-
+	
+	
 // <h> Connection parameter
 //   <o> minimum connection interval (n * 1.25ms) <6-3200>
 #define BLELIB_MIN_CONNECTION_INTERVAL (6)

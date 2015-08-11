@@ -29,6 +29,16 @@ limitations under the License.
 #include "TZ01_system_conf.h"
 
 /**
+ * @enum  TZ01_system_RUN_EVT
+ * @brief The type of event that occurrd in TZ01_system_run().
+ */
+typedef enum {
+    RUNEVT_NONE,        /*!< None */
+    RUNEVT_LO_VOLT,     /*!< Lo voltage detected. */
+    RUNEVT_POWOFF,      /*!< Power off operation detected. */
+}   TZ01_system_RUNEVT;
+
+/**
  * @brief Initialize system library.
  *
  * @return Initialize result.
@@ -41,10 +51,9 @@ bool TZ01_system_init(void);
  * @brief Running system library.
  *
  * @return Running result.
- * @retval true : Success.
- * @retval false: Failed.
+ * @retval Event that occurrd.
  */
-bool TZ01_system_run(void);
+TZ01_system_RUNEVT TZ01_system_run(void);
 
 
 

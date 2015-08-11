@@ -71,12 +71,12 @@ int main(void)
     TZ01_console_puts("DONE.\r\n");
 
     for (;;) {
-        if (TZ01_system_run() == false) {
-            /* Power off operation OR Low voltage detected */
+        if (TZ01_system_run() == RUNEVT_POWOFF) {
+            /* Power off operation detected */
             break;
         }
 
-        ble_tracker_run(true, false);
+        ble_tracker_run(true, true);
     }
 
 term_app:

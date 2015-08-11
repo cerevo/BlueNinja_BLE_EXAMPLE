@@ -1,7 +1,7 @@
 /**
  * @file RTE_Device.h
  * @brief RTE Device Configuration for Toshiba TZ10xx
- * @date $Date:: 2015-03-03 08:35:58 +0900 #$
+ * @date $Date:: 2015-06-17 16:12:02 +0900 #$
  * @note
  */
 
@@ -14,12 +14,12 @@
  * CORPORATION MAKES NO OTHER WARRANTY OF ANY KIND, WHETHER EXPRESS, IMPLIED OR,
  * STATUTORY AND DISCLAIMS ANY AND ALL IMPLIED WARRANTIES OF MERCHANTABILITY,
  * SATISFACTORY QUALITY, NON INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE.
- *
+ * 
  * THE SOURCE CODE AND DOCUMENTATION MAY INCLUDE ERRORS. TOSHIBA CORPORATION
  * RESERVES THE RIGHT TO INCORPORATE MODIFICATIONS TO THE SOURCE CODE IN LATER
  * REVISIONS OF IT, AND TO MAKE IMPROVEMENTS OR CHANGES IN THE DOCUMENTATION OR
  * THE PRODUCTS OR TECHNOLOGIES DESCRIBED THEREIN AT ANY TIME.
- *
+ * 
  * TOSHIBA CORPORATION SHALL NOT BE LIABLE FOR ANY DIRECT, INDIRECT OR
  * CONSEQUENTIAL DAMAGE OR LIABILITY ARISING FROM YOUR USE OF THE SOURCE CODE OR
  * ANY DOCUMENTATION, INCLUDING BUT NOT LIMITED TO, LOST REVENUES, DATA OR
@@ -75,12 +75,12 @@
 //  <o30> GPIO_30 Pin <0=>(disabled) <1=>MCU_GPIO_30
 //  <o31> GPIO_31 Pin <0=>(disabled) <1=>MCU_GPIO_31
 #if RTE_GPIO
-#define RTE_GPIO_0_ID 0
+#define RTE_GPIO_0_ID 1
 #define RTE_GPIO_1_ID 1
 #define RTE_GPIO_2_ID 1
 #define RTE_GPIO_3_ID 1
 #define RTE_GPIO_4_ID 1
-#define RTE_GPIO_5_ID 0
+#define RTE_GPIO_5_ID 1
 #define RTE_GPIO_6_ID 1
 #define RTE_GPIO_7_ID 1
 #define RTE_GPIO_8_ID 1
@@ -99,10 +99,10 @@
 #define RTE_GPIO_21_ID 1
 #define RTE_GPIO_22_ID 2
 #define RTE_GPIO_23_ID 2
-#define RTE_GPIO_24_ID 0
-#define RTE_GPIO_25_ID 0
-#define RTE_GPIO_26_ID 0
-#define RTE_GPIO_27_ID 0
+#define RTE_GPIO_24_ID 1
+#define RTE_GPIO_25_ID 1
+#define RTE_GPIO_26_ID 1
+#define RTE_GPIO_27_ID 1
 #define RTE_GPIO_28_ID 1
 #define RTE_GPIO_29_ID 1
 #define RTE_GPIO_30_ID 1
@@ -312,7 +312,7 @@
 //  <o1> SDA pin <1=>MCU_I2C0_DATA <2=>MCU_UA1_TXD
 //  <o2> SCL pin <1=>MCU_I2C0_CLK  <2=>MCU_UA1_RXD
 //  <o3> Output drive capability <0=>2mA <1=>4mA <2=>5mA <3=>7mA
-//  <o4> Internal resistor for SDA and SCL <1=>None <2=>Pullup
+//  <o4> Internal resistor for SDA and SCL <1=>None <2=>Pullup 
 //  <e5> DMA Rx
 //   <o6> DMA Channel <0-7>
 //   <o7> Handshake Channel <0-7>
@@ -485,7 +485,7 @@
 //   <o1> UA2_RTS_N pin <1=>MCU_UA2_RTS_N
 //   <o2> UA2_CTS_N pin <1=>MCU_UA2_CTS_N
 //  </e>
-#define RTE_UART2_HW_FLOW 0
+#define RTE_UART2_HW_FLOW 1
 #if RTE_UART2 && RTE_UART2_HW_FLOW
 #define RTE_UA2_RTS_N_ID 1
 #define RTE_UA2_CTS_N_ID 1
@@ -592,7 +592,7 @@
 // </e>
 
 // <e> TMR (Timer)
-#define RTE_TMR 0
+#define RTE_TMR 1
 // </e>
 
 // <e> ADVTMR (Advanced Timer)
@@ -741,7 +741,7 @@
 // </e>
 
 // <e> RNG (Random Number Generator)
-#define RTE_RNG 1
+#define RTE_RNG 0
 // </e>
 
 // <e> NOR (internal flash)
@@ -818,7 +818,7 @@
 //  <o4> TRACEDATA[2] pin <1=>MCU_GPIO_10
 //  <o5> TRACEDATA[3] pin <1=>MCU_GPIO_11
 #define RTE_CPU_TRACE 0
-#if RTE_CPU_TRACE
+#if RTE_CPU_TRACE 
 #define RTE_TRACECLK_ID   1
 #define RTE_TRACEDATA0_ID 1
 #define RTE_TRACEDATA1_ID 1

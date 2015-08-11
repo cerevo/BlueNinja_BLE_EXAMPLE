@@ -67,7 +67,8 @@ static void gpio_button_handler(uint32_t pin);
  * @brief
  * Configuration Button I/O
  *
- */
+ * If the "TWIC_BUTTON_GPIO_NO" is defined in the tz1sm_config.h, this
+ * API can be used for handling the event of a button press. */
 uint8_t twicButtonInit(void)
 {
   uint8_t ret;
@@ -90,7 +91,7 @@ uint8_t twicButtonInit(void)
  * @return    status (TWIC_BUTTON_NOP:no pushed,
  *                    TWIC_BUTTON_PUSH:pushed)
  *
- */
+ * This API gets the past record of the button press. */
 uint16_t twicButton(void)
 {
   uint16_t sts = TWIC_BUTTON_NOP;
@@ -102,7 +103,8 @@ uint16_t twicButton(void)
   return sts;
 }
 
-
+/* This API cleans up the past record of the button press and disables
+ * the system to hold the past record of the button. */
 void twicButtonVoid(void)
 {
   gpio_button_enable = false;
@@ -111,7 +113,7 @@ void twicButtonVoid(void)
   return;
 }
 
-
+/* This API enable the system to hold the past record of the button. */
 void twicButtonEnable(void)
 {
   gpio_button_enable = true;
@@ -120,7 +122,10 @@ void twicButtonEnable(void)
   return;
 }
 
-
+/* @return    bool (true: The button is being pressed.
+                    false: The button is not being pressed.
+ * This API gets the realtime level of the GPIO which is assigned to
+ * the button. */
 bool twicButtonLevel(void)
 {
   bool val;
@@ -141,8 +146,9 @@ static void gpio_button_handler(uint32_t pin)
 
 /*
  * @brief
- * Off button
+ * Finalizes the Button.
  *
+ * This API disables and frees the resource for the button.
  */
 uint8_t twicButtonFinalize(void)
 {

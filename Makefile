@@ -1,4 +1,4 @@
-TARGET=mini4wd_telemeter
+TARGET=blueninja_ble_example
 
 #Directories
 TOOL_DIR ?= /opt/cross/bin/

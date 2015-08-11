@@ -219,13 +219,11 @@ void tz1smHalDebugUartInit(void)
 {
   ARM_DRIVER_UART *drv = TWIC_DEBUG_UART_CH;
 
-  drv->Initialize(
-    uart_dbg_handler,
-    ((1u << ARM_UART_EVENT_RX_TIMEOUT) | (1u << ARM_UART_EVENT_TX_THRESHOLD) |
-     (1u << ARM_UART_EVENT_RX_THRESHOLD)));
-  drv->Configure(
-    115200, 8, ARM_UART_PARITY_NONE, ARM_UART_STOP_BITS_1,
-    ARM_UART_FLOW_CONTROL_NONE);
+  drv->Initialize(uart_dbg_handler, (1u << ARM_UART_EVENT_RX_TIMEOUT)
+                  | (1u << ARM_UART_EVENT_TX_THRESHOLD)
+                  | (1u << ARM_UART_EVENT_RX_THRESHOLD));
+  drv->Configure(115200, 8, ARM_UART_PARITY_NONE, ARM_UART_STOP_BITS_1,
+                 ARM_UART_FLOW_CONTROL_NONE);
   drv->SetTxThreshold(8);
   drv->SetRxThreshold(8);
   drv->PowerControl(ARM_POWER_FULL);
@@ -496,9 +494,9 @@ void vTimerCallback(TimerHandle_t pxTimer)
   return;
 }
 
-tz1smHalTimerId
-tz1smHalTimerCreate(const tz1smHalTimer_t *timer,
-                    tz1smHalTimerBehavior_t type, void *argument)
+tz1smHalTimerId tz1smHalTimerCreate(const tz1smHalTimer_t *timer,
+                                    tz1smHalTimerBehavior_t type,
+                                    void *argument)
 {
   tz1smHalTimer_t *_timer = (tz1smHalTimer_t *)timer;
   tz1utListHead_t *node = &_timer->sibling;
@@ -694,7 +692,7 @@ tz1smHalStatus_t tz1smHalTimerStart(tz1smHalTimerId timer_id, uint32_t millisec)
   return TZ1SM_HAL_STATUS_OK;
 }
 
-tz1smHalStatus_t tz1smHalTimerStop(tz1smHalTimerId	timer_id)
+tz1smHalStatus_t tz1smHalTimerStop(tz1smHalTimerId timer_id)
 {
   tz1utListHead_t *node = (tz1utListHead_t *)timer_id;
   tz1smHalTimer_t *timer = tz1utListContainerOf(node, tz1smHalTimer_t, sibling);
@@ -799,12 +797,12 @@ void tz1smHalOsYeild(void) { return; }
 
 tz1smHalStatus_t tz1smHalLePmuStart(void)
 {
-  PMU_STATUS pmu_status = PMU_OK;
+  PMU_STATUS status = PMU_OK;
   
-/* PMU_CD_MPIER  :CPU,SRAM and SPI
- * PMU_CD_PPIER0 :GPIO,SPIM2/3
- * PMU_CD_PPIER1 :SPIM0/1,I2C0/1, UART0/1
- * PMU_CD_PPIER2 :UART2 */
+  /* PMU_CD_MPIER  :CPU,SRAM and SPI
+   * PMU_CD_PPIER0 :GPIO,SPIM2/3
+   * PMU_CD_PPIER1 :SPIM0/1,I2C0/1, UART0/1
+   * PMU_CD_PPIER2 :UART2 */
 
 #if defined(TWIC_DEBUG_LOG_TRACE) || defined(TWIC_DEBUG_LOG_UART)
 #if (TWIC_DEBUG_UART_NUMBER == 0)
@@ -813,7 +811,7 @@ tz1smHalStatus_t tz1smHalLePmuStart(void)
   tz1smStartClock(TZ1SM_HAL_PCD_UART1|TZ1SM_HAL_PCD_PP1);
 #endif  
 #endif
-/* UARTCLK(PMU_CSM_UART2) must be less than 5/3 * PCLK(PMU_CD_PPIER2) */
+  /* UARTCLK(PMU_CSM_UART2) must be less than 5/3 * PCLK(PMU_CD_PPIER2) */
   tz1smStartClock(TZ1SM_HAL_PCD_UART2|TZ1SM_HAL_PCD_PP1);
 #if 0
   //pmu_status = Driver_PMU.SelectClockSource(
@@ -828,27 +826,27 @@ tz1smHalStatus_t tz1smHalLePmuStart(void)
   //return TZ1SM_HAL_STATUS_ERROR_DRIVER;
 #endif
   
-/* The IO setup of the PINs, connected to the internal BLE Controller. */
-  pmu_status = Driver_PMU.StandbyInputBuffer(PMU_IO_FUNC_GPIO_29, 0);
-  if (pmu_status != PMU_OK)
-    return TZ1SM_HAL_STATUS_ERROR_DRIVER;
-  pmu_status = Driver_PMU.StandbyInputBuffer(PMU_IO_FUNC_GPIO_30, 0);
-  if (pmu_status != PMU_OK)
-    return TZ1SM_HAL_STATUS_ERROR_DRIVER;
-
+  /* The IO setup of the PINs, connected to the internal BLE Controller. */
+#if defined(TZ1SM_HAL_GPIO_BLE_STATUS)
+  status = Driver_PMU.StandbyInputBuffer(TZ1SM_HAL_GPIO_BLE_STATUS, 0);
+  if (status != PMU_OK) return TZ1SM_HAL_STATUS_ERROR_DRIVER;
+#endif
+#if defined(TZ1SM_HAL_GPIO_BLE_HOST_WAKE_UP)
+  status = Driver_PMU.StandbyInputBuffer(TZ1SM_HAL_GPIO_BLE_HOST_WAKE_UP, 0);
+  if (status != PMU_OK) return TZ1SM_HAL_STATUS_ERROR_DRIVER;
+#endif
   /* 32kHz Clock source choice. */
 #if defined(TWIC_LECE_LOWPOWER)
 #if defined(TWIC_LECE_CLK32K_SLPXOIN_OSC32K_FROM_CG_CLK32K_OUT)
   /* tz1smHalInitializePcdSystem dose it. */
   //Driver_PMU.SelectClockSource(PMU_CSM_RTC, PMU_CLOCK_SOURCE_OSC32K);
-  //pmu_status = Driver_PMU.StartClockSource(PMU_CLOCK_SOURCE_OSC32K);
-  //if (pmu_status != PMU_OK)
+  //status = Driver_PMU.StartClockSource(PMU_CLOCK_SOURCE_OSC32K);
+  //if (status != PMU_OK)
   //return TZ1SM_HAL_STATUS_ERROR_DRIVER;
 #endif
 #if defined(TWIC_LECE_CLK32K_SLPXOIN_CLOCK)
-  pmu_status = Driver_PMU.Enable32kOut(1);
-  if (pmu_status != PMU_OK)
-    return TZ1SM_HAL_STATUS_ERROR_DRIVER;
+  status = Driver_PMU.Enable32kOut(1);
+  if (status != PMU_OK) return TZ1SM_HAL_STATUS_ERROR_DRIVER;
 #endif
 #endif
   
@@ -881,24 +879,24 @@ tz1smHalStatus_t tz1smHalLePmuStatus(void)
 
 tz1smHalStatus_t tz1smHalLePmuStop(const bool stop_osc32K)
 {
-  PMU_STATUS pmu_status;
+  PMU_STATUS status;
   
   /* INPUT PINs */
-
-  pmu_status = Driver_PMU.StandbyInputBuffer(PMU_IO_FUNC_GPIO_29, 1);
-  if (pmu_status != PMU_OK)
-    return TZ1SM_HAL_STATUS_ERROR_DRIVER;
-  pmu_status = Driver_PMU.StandbyInputBuffer(PMU_IO_FUNC_GPIO_30, 1);
-  if (pmu_status != PMU_OK)
-    return TZ1SM_HAL_STATUS_ERROR_DRIVER;
-
+#if defined(TZ1SM_HAL_GPIO_BLE_STATUS)
+  status = Driver_PMU.StandbyInputBuffer(TZ1SM_HAL_GPIO_BLE_STATUS, 1);
+  if (status != PMU_OK) return TZ1SM_HAL_STATUS_ERROR_DRIVER;
+#endif  
+#if defined(TZ1SM_HAL_GPIO_BLE_HOST_WAKE_UP)
+  status = Driver_PMU.StandbyInputBuffer(TZ1SM_HAL_GPIO_BLE_HOST_WAKE_UP, 1);
+  if (status != PMU_OK) return TZ1SM_HAL_STATUS_ERROR_DRIVER;
+#endif
   /* tz1smStopClock should do it. */
   //if (stop_osc12M == true) {
   //PMU_CLOCK_SOURCE_STATE clock_state;
   //clock_state = Driver_PMU.GetClockSourceState(PMU_CLOCK_SOURCE_OSC12M);
   //if (PMU_CLOCK_SOURCE_STATE_STOPPED != clock_state) {
-  //pmu_status = Driver_PMU.StopClockSource(PMU_CLOCK_SOURCE_OSC12M);
-  //if (pmu_status != PMU_OK)
+  //status = Driver_PMU.StopClockSource(PMU_CLOCK_SOURCE_OSC12M);
+  //if (status != PMU_OK)
   //return TZ1SM_HAL_STATUS_ERROR_DRIVER;
   //}
   //}
@@ -908,14 +906,13 @@ tz1smHalStatus_t tz1smHalLePmuStop(const bool stop_osc32K)
   if (stop_osc32K == true) {
 #if defined(TWIC_LECE_CLK32K_SLPXOIN_OSC32K_FROM_CG_CLK32K_OUT)
     /* tz1smStopClock should do it. */
-    //pmu_status = Driver_PMU.StopClockSource(PMU_CLOCK_SOURCE_OSC32K);
-    //if (pmu_status != PMU_OK)
+    //status = Driver_PMU.StopClockSource(PMU_CLOCK_SOURCE_OSC32K);
+    //if (status != PMU_OK)
     //return TZ1SM_HAL_STATUS_ERROR_DRIVER;
 #endif
 #if defined(TWIC_LECE_CLK32K_SLPXOIN_CLOCK)
-    pmu_status = Driver_PMU.Enable32kOut(0);
-    if (pmu_status != PMU_OK)
-      return TZ1SM_HAL_STATUS_ERROR_DRIVER;
+    status = Driver_PMU.Enable32kOut(0);
+    if (status != PMU_OK) return TZ1SM_HAL_STATUS_ERROR_DRIVER;
 #endif
   }
 #else
@@ -1005,7 +1002,6 @@ uint8_t tz1smHalPmuButtonFinalize(void)
   }
   #endif
 #endif
-
   return 0;  
 }
 
@@ -1604,11 +1600,11 @@ tz1smHalStatus_t tz1smHalOperationMode(tz1smHalOm_t mode)
 		
 	if ((mode & 0x80) == 0x80) {
 		mode &= 0x7f;
-		if (mode == TZ1SM_HAL_OM_SLEEP2) {
+		if (TZ1SM_HAL_OM_SLEEP2 == mode) {
 			power_mode = PMU_POWER_MODE_SLEEPDEEP2;
-		} else if (mode == TZ1SM_HAL_OM_SLEEP1) {
+		} else if (TZ1SM_HAL_OM_SLEEP1 == mode) {
 			power_mode = PMU_POWER_MODE_SLEEPDEEP1;
-		} else if (mode == TZ1SM_HAL_OM_SLEEP0) {
+		} else if (TZ1SM_HAL_OM_SLEEP0 == mode) {
 			power_mode = PMU_POWER_MODE_SLEEPDEEP0;
 		} else {
 			power_mode = (PMU_POWER_MODE)mode;
@@ -1636,21 +1632,24 @@ tz1smHalStatus_t tz1smHalOperationMode(tz1smHalOm_t mode)
   }
 	
 	voltage_mode = Driver_PMU.GetVoltageMode();
-	if (mode > TZ1SM_HAL_OM_SLEEP2) {
-	  if (voltage_mode == PMU_VOLTAGE_MODE_A) {
+	if (TZ1SM_HAL_OM_SLEEP2 < mode) {
+	  if (PMU_VOLTAGE_MODE_A == voltage_mode) {
       Driver_PMU.SetPLLFrequency(48000000); /* 48MHz */
-    } else if (voltage_mode == PMU_VOLTAGE_MODE_B) {
+    } else if (PMU_VOLTAGE_MODE_B == voltage_mode) {
       Driver_PMU.SetPLLFrequency(36000000); /* 36MHz */
     }
 
     if (voltage_mode != PMU_VOLTAGE_MODE_D) {
       Driver_PMU.StartClockSource(PMU_CLOCK_SOURCE_OSC12M);
-      while (Driver_PMU.GetClockSourceState(PMU_CLOCK_SOURCE_OSC12M) != PMU_CLOCK_SOURCE_STATE_RUNNING) {
+      while (Driver_PMU.GetClockSourceState(PMU_CLOCK_SOURCE_OSC12M)
+             != PMU_CLOCK_SOURCE_STATE_RUNNING) {
         /* DO NOTHING */
       }
-      if ((voltage_mode == PMU_VOLTAGE_MODE_A) || (voltage_mode == PMU_VOLTAGE_MODE_B)) {
+      if (PMU_VOLTAGE_MODE_A == voltage_mode ||
+          PMU_VOLTAGE_MODE_B == voltage_mode) {
         Driver_PMU.StartClockSource(PMU_CLOCK_SOURCE_PLL);
-        while (Driver_PMU.GetClockSourceState(PMU_CLOCK_SOURCE_PLL) != PMU_CLOCK_SOURCE_STATE_RUNNING) {
+        while (Driver_PMU.GetClockSourceState(PMU_CLOCK_SOURCE_PLL)
+               != PMU_CLOCK_SOURCE_STATE_RUNNING) {
           /* DO NOTHING */
         }
         Driver_PMU.SetPrescaler(PMU_CD_PPIER0, 4);
@@ -1783,27 +1782,29 @@ void tz1smHalRegisterCb(const tz1smHalCb_t * const cb)
  *   BLE_RESETX	MCU_GPIO28	BLE Reset. (Dir:Output 2mA)
  *   BLE_DCDCEN TWIC_LECE_DCDCEN_GPIO_NUMBER BLE DCDC Enable.
  */
-
 void tz1smHalGpioInit(void)
 {
-  GPIO_STATUS sts;
+  GPIO_STATUS sts = Driver_GPIO.PowerControl(ARM_POWER_FULL);
 
-  sts = Driver_GPIO.PowerControl(ARM_POWER_FULL);
   if (sts != GPIO_OK)
     TWIC_GPIO_ERROR("PowerControl(ARM_POWER_FULL)=%d\r\n", sts);
   /* Reset Pin Configuration */
-  sts = Driver_GPIO.Configure(
-    TZ1SM_HAL_GPIO_BLE_RESETX, GPIO_DIRECTION_OUTPUT_2MA,
-    GPIO_EVENT_DISABLE, NULL);
-  if (sts != GPIO_OK) TWIC_GPIO_ERROR("Configure()=%d\r\n", sts);
+  sts = Driver_GPIO.Configure(TZ1SM_HAL_GPIO_BLE_RESETX,
+                              GPIO_DIRECTION_OUTPUT_2MA, GPIO_EVENT_DISABLE,
+                              NULL);
+  if (sts != GPIO_OK) {
+    TWIC_GPIO_ERROR("Conf(TZ1SM_HAL_GPIO_BLE_RESETX) = %d\r\n", sts);
+  }
 
   tz1smHalGpioBleReset(true);
 
 #if defined(TWIC_LECE_DCDCEN)
-  sts = Driver_GPIO.Configure(
-    TWIC_LECE_DCDCEN_GPIO_NUMBER, GPIO_DIRECTION_OUTPUT_2MA,
-    GPIO_EVENT_DISABLE, NULL);
-  if (sts != GPIO_OK) TWIC_GPIO_ERROR("Configure()=%d\r\n", sts);
+  sts = Driver_GPIO.Configure(TWIC_LECE_DCDCEN_GPIO_NUMBER,
+                              GPIO_DIRECTION_OUTPUT_2MA, GPIO_EVENT_DISABLE,
+                              NULL);
+  if (sts != GPIO_OK) {
+    TWIC_GPIO_ERROR("Conf(TWIC_LECE_DCDCEN_GPIO_NUMBER)=%d\r\n", sts);
+  }
   tz1smHalGpioWrite(TWIC_LECE_DCDCEN_GPIO_NUMBER, true);
 #endif
   
@@ -1813,6 +1814,7 @@ void tz1smHalGpioInit(void)
 void tz1smHalGpioUnInit(void)
 {
   tz1smHalGpioBleReset(true);
+
 #if defined(TWIC_LECE_DCDCEN)
   tz1smHalGpioWrite(TWIC_LECE_DCDCEN_GPIO_NUMBER, false);
 #endif
@@ -1890,84 +1892,85 @@ tz1smHalStatus_t tz1smHalGpioBleReset(const bool reset)
   tz1smHalStatus_t ret_sts = TZ1SM_HAL_STATUS_OK;
   TZ10XX_DRIVER_GPIO *drv = &Driver_GPIO;
 
-  if (reset == false) {
+  if (false == reset) {
     /* no reset, configuration GPIO for Power On */
+#if defined(TZ1SM_HAL_GPIO_BLE_STATUS)
 #if defined(TWIC_LECE_ISR_LOWPOWER_STATUS_EVENT)
-    sts = drv->Configure(
-      TZ1SM_HAL_GPIO_BLE_STATUS, GPIO_DIRECTION_INPUT_PULL_UP,
-      GPIO_EVENT_EDGE_NEG, tz1smHalIsrBleStatus);
+    sts = drv->Configure(TZ1SM_HAL_GPIO_BLE_STATUS,
+                         GPIO_DIRECTION_INPUT_PULL_UP, GPIO_EVENT_EDGE_NEG,
+                         tz1smHalIsrBleStatus);
 #else
-    sts = drv->Configure(
-      TZ1SM_HAL_GPIO_BLE_STATUS, GPIO_DIRECTION_INPUT_PULL_UP,
-      GPIO_EVENT_DISABLE, NULL);
+    sts = drv->Configure(TZ1SM_HAL_GPIO_BLE_STATUS,
+                         GPIO_DIRECTION_INPUT_PULL_UP, GPIO_EVENT_DISABLE,
+                         NULL);
 #endif
     if (sts != GPIO_OK) {
       TWIC_GPIO_ERROR("Conf(TZ1SM_HAL_GPIO_BLE_STATUS) = %d\r\n", sts);
       ret_sts = TZ1SM_HAL_STATUS_ERROR_DRIVER;
       goto END;
     }
+#endif
+#if defined(TZ1SM_HAL_GPIO_BLE_HOST_WAKE_UP)
 #if defined(TWIC_LECE_ISR_LOWPOWER_WAKEUP)
-    sts = drv->Configure(
-      TZ1SM_HAL_GPIO_BLE_HOST_WAKE_UP, GPIO_DIRECTION_INPUT_PULL_UP,
-      GPIO_EVENT_EDGE_NEG, tz1smHalIsrBleHostWakeup);
+    sts = drv->Configure(TZ1SM_HAL_GPIO_BLE_HOST_WAKE_UP,
+                         GPIO_DIRECTION_INPUT_PULL_UP, GPIO_EVENT_EDGE_BOTH,
+                         tz1smHalIsrBleHostWakeup);
 #else
-    sts = drv->Configure(
-      TZ1SM_HAL_GPIO_BLE_HOST_WAKE_UP, GPIO_DIRECTION_INPUT_PULL_UP,
-      GPIO_EVENT_DISABLE, NULL);
+    sts = drv->Configure(TZ1SM_HAL_GPIO_BLE_HOST_WAKE_UP,
+                         GPIO_DIRECTION_INPUT_PULL_UP, GPIO_EVENT_DISABLE,
+                         NULL);
 #endif
     if (sts != GPIO_OK) {
       TWIC_GPIO_ERROR("Conf(TZ1SM_HAL_GPIO_BLE_HOST_WAKE_UP) = %d\r\n", sts);
       ret_sts = TZ1SM_HAL_STATUS_ERROR_DRIVER;
       goto END;
     }
-    
-    sts = drv->Configure(
-      TZ1SM_HAL_GPIO_BLE_REQUEST_WAKE_UP,
-      GPIO_DIRECTION_OUTPUT_2MA, GPIO_EVENT_DISABLE, NULL);
+#endif
+    sts = drv->Configure(TZ1SM_HAL_GPIO_BLE_REQUEST_WAKE_UP,
+                         GPIO_DIRECTION_OUTPUT_2MA, GPIO_EVENT_DISABLE, NULL);
     if (sts != GPIO_OK) {
-      TWIC_GPIO_ERROR(
-        "Conf(TZ1SM_HAL_GPIO_BLE_REQUEST_WAKE_UP) = %d\r\n", sts);
+      TWIC_GPIO_ERROR("Conf(TZ1SM_HAL_GPIO_BLE_REQUEST_WAKE_UP) = %d\r\n", sts);
       ret_sts = TZ1SM_HAL_STATUS_ERROR_DRIVER;
       goto END;
     }
+    tz1smHalSuppressHpd(true);
   }
   
-  ret_sts = tz1smHalGpioWrite(
-    TZ1SM_HAL_GPIO_BLE_RESETX, (reset == true) ? false : true);
+  ret_sts = tz1smHalGpioWrite(TZ1SM_HAL_GPIO_BLE_RESETX,
+                              (reset == true) ? false : true);
   if (ret_sts != TZ1SM_HAL_STATUS_OK) {
     ret_sts = TZ1SM_HAL_STATUS_ERROR_DRIVER;
     goto END;
   }
 
-  if (reset == true) {
+  if (true == reset) {
     /* reset, configuration GPIO for Power Off */
-    sts = drv->Configure(
-      TZ1SM_HAL_GPIO_BLE_STATUS,
-      GPIO_DIRECTION_INPUT_HI_Z, GPIO_EVENT_DISABLE, NULL);
+#if defined(TZ1SM_HAL_GPIO_BLE_STATUS)
+    sts = drv->Configure(TZ1SM_HAL_GPIO_BLE_STATUS,
+                         GPIO_DIRECTION_INPUT_HI_Z, GPIO_EVENT_DISABLE, NULL);
     if (sts != GPIO_OK) {
       TWIC_GPIO_ERROR("Conf(TZ1SM_HAL_GPIO_BLE_STATUS) = %d\r\n", sts);
       ret_sts = TZ1SM_HAL_STATUS_ERROR_DRIVER;
       goto END;
     }
-    
-    sts = drv->Configure(
-      TZ1SM_HAL_GPIO_BLE_HOST_WAKE_UP,
-      GPIO_DIRECTION_INPUT_HI_Z, GPIO_EVENT_DISABLE, NULL); 
+#endif    
+#if defined(TZ1SM_HAL_GPIO_BLE_HOST_WAKE_UP)
+    sts = drv->Configure(TZ1SM_HAL_GPIO_BLE_HOST_WAKE_UP,
+                         GPIO_DIRECTION_INPUT_HI_Z, GPIO_EVENT_DISABLE, NULL); 
     if (sts != GPIO_OK) {
       TWIC_GPIO_ERROR("Conf(TZ1SM_HAL_GPIO_BLE_HOST_WAKE_UP) = %d\r\n", sts);
       ret_sts = TZ1SM_HAL_STATUS_ERROR_DRIVER;
       goto END;
     }
-    
-    sts = drv->Configure(
-      TZ1SM_HAL_GPIO_BLE_REQUEST_WAKE_UP,
-      GPIO_DIRECTION_INPUT_HI_Z, GPIO_EVENT_DISABLE, NULL);
+#endif    
+    sts = drv->Configure(TZ1SM_HAL_GPIO_BLE_REQUEST_WAKE_UP,
+                         GPIO_DIRECTION_INPUT_HI_Z, GPIO_EVENT_DISABLE, NULL);
     if (sts != GPIO_OK) {
-      TWIC_GPIO_ERROR(
-        "Conf(TZ1SM_HAL_GPIO_BLE_REQUEST_WAKE_UP) = %d\r\n", sts);
+      TWIC_GPIO_ERROR("Conf(TZ1SM_HAL_GPIO_BLE_REQUEST_WAKE_UP) = %d\r\n", sts);
       ret_sts = TZ1SM_HAL_STATUS_ERROR_DRIVER;
       goto END;
     }
+    tz1smHalSuppressHpd(false);
   }
 
 END:
@@ -1978,10 +1981,9 @@ END:
 
 /*
  * @brief
- * 1. Write GPIO BLE Request Wakeup Pin(true:ble active mode,
+ * Write GPIO BLE Request Wakeup Pin(true:ble active mode,
  * false:permit ble low power mode)
  */
-
 void tz1smHalGpioBleWakeUp(const bool activation)
 {
   tz1smHalGpioWrite(TZ1SM_HAL_GPIO_BLE_REQUEST_WAKE_UP, activation);
@@ -1996,6 +1998,19 @@ bool tz1smHalGpioBleLowpowerStatus(void)
   bool val;
 
   tz1smHalGpioRead(TZ1SM_HAL_GPIO_BLE_STATUS, &val);
+
+  return val;
+}
+
+/*
+ * @brief
+ * Read GPIO BLE Host Wakeup Pin(true:UART is Active, false:No data)
+ */
+bool tz1smHalGpioBleHostWakeupStatus(void)
+{
+  bool val;
+
+  tz1smHalGpioRead(TZ1SM_HAL_GPIO_BLE_HOST_WAKE_UP, &val);
 
   return val;
 }
@@ -2028,7 +2043,7 @@ uint8_t tz1smHalGpioButtonInit(void (handler)(uint32_t pin))
   ret = Driver_GPIO.Configure(TWIC_BUTTON_GPIO_NO_BB, GPIO_DIRECTION_INPUT_HI_Z, GPIO_EVENT_EDGE_NEG, handler);
   if (ret != GPIO_OK) return 1;
   #endif
-  
+
   return 0;
 }
 
@@ -2152,8 +2167,8 @@ bool tz1smHalGpioBleLowpowerStatus(void) { return false; }
 #define TWIC_UART_BLE_RX_BUFFER_SIZE (1064*3)
 #define TWIC_UART_BLE_TX_BUFFER_SIZE (136*2)
 #else
-#define TWIC_UART_BLE_RX_BUFFER_SIZE (136*3)
-#define TWIC_UART_BLE_TX_BUFFER_SIZE (136*2)
+#define TWIC_UART_BLE_RX_BUFFER_SIZE (136*TWIC_CONFIG_RX_BUFFER_SIZE)
+#define TWIC_UART_BLE_TX_BUFFER_SIZE (136*TWIC_CONFIG_RX_BUFFER_SIZE)
 #endif
 #define TWIC_UART_BLE_TX_CTS_CHECK_COUNT (0x1000) /* T.B.D */
 
@@ -2217,15 +2232,14 @@ void tz1smHalUartInit(uint32_t br, bool fc)
   
   TZ1SM_HAL_IRQ_DISABLE_SAVE();
 
-  sts = drv->Initialize(
-    uart_ble_handler,
-    (1u << ARM_UART_EVENT_RX_OVERRUN)       |
-    (1u << ARM_UART_EVENT_RX_BREAK)         |
-    (1u << ARM_UART_EVENT_RX_PARITY_ERROR)  |
-    (1u << ARM_UART_EVENT_RX_FRAMING_ERROR) |
-    (1u << ARM_UART_EVENT_RX_TIMEOUT)       |
-    (1u << ARM_UART_EVENT_TX_THRESHOLD)     |
-    (1u << ARM_UART_EVENT_RX_THRESHOLD));
+  sts = drv->Initialize(uart_ble_handler,
+                        (1u << ARM_UART_EVENT_RX_OVERRUN)       |
+                        (1u << ARM_UART_EVENT_RX_BREAK)         |
+                        (1u << ARM_UART_EVENT_RX_PARITY_ERROR)  |
+                        (1u << ARM_UART_EVENT_RX_FRAMING_ERROR) |
+                        (1u << ARM_UART_EVENT_RX_TIMEOUT)       |
+                        (1u << ARM_UART_EVENT_TX_THRESHOLD)     |
+                        (1u << ARM_UART_EVENT_RX_THRESHOLD));
   
   if (sts != ARM_UART_OK) {
     TWIC_UART_ERROR("Initialize()=%d\r\n", sts);
@@ -2278,8 +2292,8 @@ tz1smHalStatus_t tz1smHalUartControl(uint32_t br, bool fc)
   else uart_ble_fc = ARM_UART_FLOW_CONTROL_NONE;
   TZ1SM_HAL_IRQ_DISABLE_SAVE();
   drv->PowerControl(ARM_POWER_LOW);
-  sts = drv->Configure(
-    br, uart_ble_data_bits, uart_ble_parity, uart_ble_stop_bits, uart_ble_fc);
+  sts = drv->Configure(br, uart_ble_data_bits, uart_ble_parity,
+                       uart_ble_stop_bits, uart_ble_fc);
   drv->PowerControl(ARM_POWER_FULL);
   if (sts != ARM_UART_OK) {
     TWIC_UART_ERROR("TZBT 2 Configure()=%d\r\n", sts);
@@ -2407,10 +2421,9 @@ tz1smHalUartPostData(const uint8_t * const data, const uint16_t length)
   if (uart_ble_tx_rp != uart_ble_tx_wp) {
     /* send from tx buffer at first.*/
     if (uart_ble_tx_wp < uart_ble_tx_rp) {
-      count = drv->WriteData(
-        &uart_ble_tx_buffer[uart_ble_tx_rp],
-        (TWIC_UART_BLE_TX_BUFFER_SIZE - uart_ble_tx_rp));
-      if (count < 0) {
+      count = drv->WriteData(&uart_ble_tx_buffer[uart_ble_tx_rp],
+                             (TWIC_UART_BLE_TX_BUFFER_SIZE - uart_ble_tx_rp));
+      if (0 > count) {
         ret_sts =TZ1SM_HAL_STATUS_ERROR_DRIVER;
         goto END;
       }
@@ -2418,16 +2431,13 @@ tz1smHalUartPostData(const uint8_t * const data, const uint16_t length)
         uart_ble_tx_rp += count;
         total += count;
       }
-      if (uart_ble_tx_rp == TWIC_UART_BLE_TX_BUFFER_SIZE)
-        uart_ble_tx_rp = 0;
+      if (TWIC_UART_BLE_TX_BUFFER_SIZE == uart_ble_tx_rp) uart_ble_tx_rp = 0;
     }
     
-    if ((uart_ble_tx_wp > uart_ble_tx_rp) &&
-        (total < TWIC_UART_BLE_HW_FIFO_SIZE)) {
-      count = drv->WriteData(
-        &uart_ble_tx_buffer[uart_ble_tx_rp],
-        (uart_ble_tx_wp - uart_ble_tx_rp));
-      if (count < 0) {
+    if (uart_ble_tx_wp > uart_ble_tx_rp && TWIC_UART_BLE_HW_FIFO_SIZE > total) {
+      count = drv->WriteData(&uart_ble_tx_buffer[uart_ble_tx_rp],
+                             (uart_ble_tx_wp - uart_ble_tx_rp));
+      if (0 > count) {
         ret_sts =TZ1SM_HAL_STATUS_ERROR_DRIVER;
         goto END;
       } else {
@@ -2441,8 +2451,7 @@ tz1smHalUartPostData(const uint8_t * const data, const uint16_t length)
   if (uart_ble_tx_wp >= uart_ble_tx_rp) {
     rest_size = (TWIC_UART_BLE_TX_BUFFER_SIZE - uart_ble_tx_wp) +
       uart_ble_tx_rp -1;
-  } else
-    rest_size = uart_ble_tx_rp - uart_ble_tx_wp -1;
+  } else rest_size = uart_ble_tx_rp - uart_ble_tx_wp -1;
   
   if (rest_size < length) {
     ret_sts = TZ1SM_HAL_STATUS_ERROR_RESOURCE;
@@ -2451,10 +2460,9 @@ tz1smHalUartPostData(const uint8_t * const data, const uint16_t length)
   
   /* send data buffer at second */
   tmp = 0;
-  if ((uart_ble_tx_rp == uart_ble_tx_wp) &&
-      (total < TWIC_UART_BLE_HW_FIFO_SIZE)) {
+  if (uart_ble_tx_rp == uart_ble_tx_wp && TWIC_UART_BLE_HW_FIFO_SIZE > total) {
     count = drv->WriteData(&data[0], length);
-    if (count < 0) {
+    if (0 > count) {
       ret_sts =TZ1SM_HAL_STATUS_ERROR_DRIVER;
       goto END;
     } else {
@@ -2465,19 +2473,14 @@ tz1smHalUartPostData(const uint8_t * const data, const uint16_t length)
   
   if (tmp != length) {
     /* copy to tx buffer */
-
     if (uart_ble_tx_wp >= uart_ble_tx_rp) {
-      while ((tmp < length) && 
-             (uart_ble_tx_wp < TWIC_UART_BLE_TX_BUFFER_SIZE)) {
+      while (tmp < length && TWIC_UART_BLE_TX_BUFFER_SIZE > uart_ble_tx_wp) {
         uart_ble_tx_buffer[uart_ble_tx_wp++] = data[tmp++];
       }
-      
-      if (uart_ble_tx_wp == TWIC_UART_BLE_TX_BUFFER_SIZE)
-        uart_ble_tx_wp = 0;
+      if (TWIC_UART_BLE_TX_BUFFER_SIZE == uart_ble_tx_wp) uart_ble_tx_wp = 0;
     }
     
-    while (tmp < length)
-        uart_ble_tx_buffer[uart_ble_tx_wp++] = data[tmp++];
+    while (tmp < length) uart_ble_tx_buffer[uart_ble_tx_wp++] = data[tmp++];
   }
   
 END:
@@ -2524,24 +2527,22 @@ tz1smHalUartSendData(const uint8_t * const data, const uint16_t length)
   if (uart_ble_tx_rp != uart_ble_tx_wp) {
     /* send from tx buffer at first.*/
     if (uart_ble_tx_wp < uart_ble_tx_rp) {
-      while (uart_ble_tx_rp < TWIC_UART_BLE_TX_BUFFER_SIZE) {
-        count = drv->WriteData(
-          &uart_ble_tx_buffer[uart_ble_tx_rp],
-          (TWIC_UART_BLE_TX_BUFFER_SIZE - uart_ble_tx_rp));
-        if (count == 0) {
+      while (TWIC_UART_BLE_TX_BUFFER_SIZE > uart_ble_tx_rp) {
+        count = drv->WriteData(&uart_ble_tx_buffer[uart_ble_tx_rp],
+                               (TWIC_UART_BLE_TX_BUFFER_SIZE - uart_ble_tx_rp));
+        if (0 == count) {
           if (uart_ble_fc == ARM_UART_FLOW_CONTROL_RTS_CTS) {
             /* check CTS value */
             modem_status = drv->GetModemStatus();
-            if (modem_status.cts == 1) {
-              if ((++cts_count) > TWIC_UART_BLE_TX_CTS_CHECK_COUNT) {
+            if (1 == modem_status.cts) {
+              if (TWIC_UART_BLE_TX_CTS_CHECK_COUNT < ++cts_count) {
                 /* CTS too long time */
                 ret_sts = TZ1SM_HAL_STATUS_ERROR_CTS;
                 goto END;
               }
-            } else
-              cts_count = 0;
+            } else cts_count = 0;
           }
-        } else if (count < 0) {
+        } else if (0 > count) {
           ret_sts = TZ1SM_HAL_STATUS_ERROR_DRIVER;
           goto END;
         } else {
@@ -2553,23 +2554,21 @@ tz1smHalUartSendData(const uint8_t * const data, const uint16_t length)
     }
     
     while (uart_ble_tx_rp < uart_ble_tx_wp) {
-      count = drv->WriteData(
-        &uart_ble_tx_buffer[uart_ble_tx_rp],
-        (uart_ble_tx_wp - uart_ble_tx_rp));
-      if (count == 0) {
-        if (uart_ble_fc == ARM_UART_FLOW_CONTROL_RTS_CTS) {
+      count = drv->WriteData(&uart_ble_tx_buffer[uart_ble_tx_rp],
+                             (uart_ble_tx_wp - uart_ble_tx_rp));
+      if (0 == count) {
+        if (ARM_UART_FLOW_CONTROL_RTS_CTS == uart_ble_fc) {
           /* check CTS value */
           modem_status = drv->GetModemStatus();
-          if (modem_status.cts == 1) {
-            if ((++cts_count) > TWIC_UART_BLE_TX_CTS_CHECK_COUNT) {
+          if (1 == modem_status.cts) {
+            if (TWIC_UART_BLE_TX_CTS_CHECK_COUNT < ++cts_count) {
               /* CTS too long time */
               ret_sts = TZ1SM_HAL_STATUS_ERROR_CTS;
               goto END;
             }
-          } else
-            cts_count = 0;
+          } else cts_count = 0;
         }
-      } else if (count < 0) {
+      } else if (0 > count) {
         ret_sts = TZ1SM_HAL_STATUS_ERROR_DRIVER;
         goto END;
       } else {
@@ -2583,20 +2582,19 @@ tz1smHalUartSendData(const uint8_t * const data, const uint16_t length)
   tmp = 0;
   while (tmp < length) {
     count = drv->WriteData(&data[tmp], (length - tmp));
-    if (count == 0) {
-      if (uart_ble_fc == ARM_UART_FLOW_CONTROL_RTS_CTS) {
+    if (0 == count) {
+      if (ARM_UART_FLOW_CONTROL_RTS_CTS == uart_ble_fc) {
         /* check CTS value */
         modem_status = drv->GetModemStatus();
-        if (modem_status.cts == 1) {
-          if ((++cts_count) > TWIC_UART_BLE_TX_CTS_CHECK_COUNT) {
+        if (1 == modem_status.cts) {
+          if (TWIC_UART_BLE_TX_CTS_CHECK_COUNT < ++cts_count) {
             /* CTS too long time */
             ret_sts = TZ1SM_HAL_STATUS_ERROR_CTS;
             goto END;
           }
-        } else
-          cts_count = 0;
+        } else cts_count = 0;
       }
-    } else if (count < 0) {
+    } else if (0 > count) {
       ret_sts = TZ1SM_HAL_STATUS_ERROR_DRIVER;
       goto END;
     } else {
@@ -2607,17 +2605,16 @@ tz1smHalUartSendData(const uint8_t * const data, const uint16_t length)
   
   /* check finish to send */
   while (!(drv->TxDone())) {
-    if (uart_ble_fc == ARM_UART_FLOW_CONTROL_RTS_CTS) {
+    if (ARM_UART_FLOW_CONTROL_RTS_CTS == uart_ble_fc) {
       /* check CTS value */
       modem_status = drv->GetModemStatus();
-      if (modem_status.cts == 1) {
-        if ((++cts_count) > TWIC_UART_BLE_TX_CTS_CHECK_COUNT) {
+      if (1 == modem_status.cts) {
+        if (TWIC_UART_BLE_TX_CTS_CHECK_COUNT < ++cts_count) {
           /* CTS too long time */
           ret_sts = TZ1SM_HAL_STATUS_ERROR_CTS;
           goto END;
         }
-      } else
-        cts_count = 0;
+      } else cts_count = 0;
     }
   }
   
@@ -2637,8 +2634,8 @@ END:
  * 
  * Note: This function is called by receive interrupt or task context.
  */
-tz1smHalStatus_t tz1smHalUartPeekData(
-  uint8_t * const data, uint16_t * const receive_length)
+tz1smHalStatus_t
+tz1smHalUartPeekData(uint8_t * const data, uint16_t * const receive_length)
 {
   ARM_DRIVER_UART *drv = &TWIC_UART_BLE_DRIVER_CH;
   uint32_t len;
@@ -2657,8 +2654,8 @@ tz1smHalStatus_t tz1smHalUartPeekData(
     len = TWIC_UART_BLE_RX_BUFFER_SIZE - uart_ble_rx_wp;
     if (0 == uart_ble_rx_rp) len -= 1;
     count = drv->ReadData(&uart_ble_rx_buffer[uart_ble_rx_wp], len);
-    if (count == 0 ) ;
-    else if (count < 0) {
+    if (0 == count) ;
+    else if (0 > count) {
       ret_sts = TZ1SM_HAL_STATUS_ERROR_DRIVER;
       goto END;
     } else {
@@ -2676,14 +2673,13 @@ tz1smHalStatus_t tz1smHalUartPeekData(
       uart_ble_rx_wp += count;
       total += count;
     }
-    if (uart_ble_rx_wp == TWIC_UART_BLE_RX_BUFFER_SIZE) uart_ble_rx_wp = 0;
+    if (TWIC_UART_BLE_RX_BUFFER_SIZE == uart_ble_rx_wp) uart_ble_rx_wp = 0;
   }
   
-  if ((uart_ble_rx_rp > uart_ble_rx_wp) &&
-      (total < TWIC_UART_BLE_HW_FIFO_SIZE)) {
+  if (uart_ble_rx_rp > uart_ble_rx_wp && TWIC_UART_BLE_HW_FIFO_SIZE > total) {
     len = uart_ble_rx_rp - uart_ble_rx_wp - 1;
     count = drv->ReadData(&uart_ble_rx_buffer[uart_ble_rx_wp], len);
-    if (count < 0) {
+    if (0 > count) {
       ret_sts = TZ1SM_HAL_STATUS_ERROR_DRIVER;
       goto END;
     } else {
@@ -2705,9 +2701,8 @@ tz1smHalStatus_t tz1smHalUartPeekData(
   
   if (uart_ble_rx_wp != uart_ble_rx_rp) {
     *data = uart_ble_rx_buffer[uart_ble_rx_rp++];
-    if (uart_ble_rx_rp == TWIC_UART_BLE_RX_BUFFER_SIZE) uart_ble_rx_rp = 0;
-    if (uart_ble_rx_wp >= uart_ble_rx_rp)
-      len = uart_ble_rx_wp - uart_ble_rx_rp;
+    if (TWIC_UART_BLE_RX_BUFFER_SIZE == uart_ble_rx_rp) uart_ble_rx_rp = 0;
+    if (uart_ble_rx_wp >= uart_ble_rx_rp) len = uart_ble_rx_wp - uart_ble_rx_rp;
     else
       len = (TWIC_UART_BLE_RX_BUFFER_SIZE - uart_ble_rx_rp) + uart_ble_rx_wp;
     *receive_length = len;
@@ -2722,7 +2717,7 @@ tz1smHalStatus_t tz1smHalUartPeekData(
   }
   
 END:
-  if (ipsr == 0) TZ1SM_HAL_IRQ_ENABLE_RESTORE();
+  if (0 == ipsr) TZ1SM_HAL_IRQ_ENABLE_RESTORE();
   
   return ret_sts;
 }
@@ -2748,21 +2743,19 @@ void tz1smHalUartGetData(void)
   TZ1SM_HAL_INTR_STATUS_DEF;
   
   ipsr = __get_IPSR();
-  if (ipsr == 0) TZ1SM_HAL_IRQ_DISABLE_SAVE();
+  if (0 == ipsr) TZ1SM_HAL_IRQ_DISABLE_SAVE();
   
   /* receive from HW RX FIFO at first.*/
   while (uart_ble_rx_rp <= uart_ble_rx_wp) {
-    if (uart_ble_rx_rp == 0) {
-      count = drv->ReadData(
-        &uart_ble_rx_buffer[uart_ble_rx_wp],
-        (TWIC_UART_BLE_RX_BUFFER_SIZE - uart_ble_rx_wp -1));
+    if (0 == uart_ble_rx_rp) {
+      count = drv->ReadData(&uart_ble_rx_buffer[uart_ble_rx_wp],
+                            (TWIC_UART_BLE_RX_BUFFER_SIZE - uart_ble_rx_wp -1));
     } else {
-      count = drv->ReadData(
-        &uart_ble_rx_buffer[uart_ble_rx_wp],
-        (TWIC_UART_BLE_RX_BUFFER_SIZE - uart_ble_rx_wp));
+      count = drv->ReadData(&uart_ble_rx_buffer[uart_ble_rx_wp],
+                            (TWIC_UART_BLE_RX_BUFFER_SIZE - uart_ble_rx_wp));
     }
-    if (count == 0) break;
-    else if (count < 0) goto END;
+    if (0 == count) break;
+    else if (0 > count) goto END;
     else {
 #if defined(TWIC_DEBUG_LOG_UART)
       {
@@ -2778,15 +2771,14 @@ void tz1smHalUartGetData(void)
       uart_ble_rx_wp += count;
       total += count;
     }
-    if (uart_ble_rx_wp == TWIC_UART_BLE_RX_BUFFER_SIZE) uart_ble_rx_wp = 0;
+    if (TWIC_UART_BLE_RX_BUFFER_SIZE == uart_ble_rx_wp) uart_ble_rx_wp = 0;
   }
   
   while (uart_ble_rx_rp > (uart_ble_rx_wp + 1)) {
-    count = drv->ReadData(
-      &uart_ble_rx_buffer[uart_ble_rx_wp],
-      (uart_ble_rx_rp - uart_ble_rx_wp - 1));
-    if (count == 0) break;
-    else if (count < 0) goto END;
+    count = drv->ReadData(&uart_ble_rx_buffer[uart_ble_rx_wp],
+                          (uart_ble_rx_rp - uart_ble_rx_wp - 1));
+    if (0 == count) break;
+    else if (0 > count) goto END;
     else {
 #if defined(TWIC_DEBUG_LOG_UART)
       {
@@ -2805,13 +2797,13 @@ void tz1smHalUartGetData(void)
   }
   
   /* check sw fifo size */
-  if (total == 0) {
+  if (0 == total) {
     if (uart_ble_rx_wp >= uart_ble_rx_rp)
       receive_size = uart_ble_rx_wp - uart_ble_rx_rp;
     else
       receive_size = (TWIC_UART_BLE_RX_BUFFER_SIZE - uart_ble_rx_rp) +
         uart_ble_rx_wp;
-    if (receive_size == (TWIC_UART_BLE_RX_BUFFER_SIZE -1)) {
+    if ((TWIC_UART_BLE_RX_BUFFER_SIZE -1) == receive_size) {
       /* sw fifo is full */
       /* clear rx buffer */
       sts = drv->FlushRxBuffer();
@@ -2838,10 +2830,9 @@ static void uart_ble_handler_tx(void)
   if (uart_ble_tx_rp != uart_ble_tx_wp) {
     /* send from tx buffer at first.*/
     if (uart_ble_tx_wp < uart_ble_tx_rp) {
-      count = drv->WriteData(
-        &uart_ble_tx_buffer[uart_ble_tx_rp],
-        (TWIC_UART_BLE_TX_BUFFER_SIZE - uart_ble_tx_rp));
-      if (count < 0)
+      count = drv->WriteData(&uart_ble_tx_buffer[uart_ble_tx_rp],
+                             (TWIC_UART_BLE_TX_BUFFER_SIZE - uart_ble_tx_rp));
+      if (0 > count)
         goto END;
       else {
         uart_ble_tx_rp += count;
@@ -2851,12 +2842,10 @@ static void uart_ble_handler_tx(void)
         uart_ble_tx_rp = 0;
     }
     
-    if ((uart_ble_tx_wp > uart_ble_tx_rp) &&
-        (total < TWIC_UART_BLE_HW_FIFO_SIZE)) {
-      count = drv->WriteData(
-        &uart_ble_tx_buffer[uart_ble_tx_rp],
-        (uart_ble_tx_wp - uart_ble_tx_rp));
-      if (count < 0)
+    if (uart_ble_tx_wp > uart_ble_tx_rp && TWIC_UART_BLE_HW_FIFO_SIZE > total) {
+      count = drv->WriteData(&uart_ble_tx_buffer[uart_ble_tx_rp],
+                             (uart_ble_tx_wp - uart_ble_tx_rp));
+      if (0 > count)
         goto END;
       else {
         uart_ble_tx_rp += count;
@@ -2876,13 +2865,11 @@ static void uart_ble_handler_rx(void)
 {
   tz1smHalUartGetData();
 #if defined(TWIC_EVENT_CALLBACK)
-  if (uart_ble_rx_rp != uart_ble_rx_wp) {
-    if (hal_cb.intr_ble_uart_rx != NULL) {
-      hal_cb.intr_ble_uart_rx();
+  if (uart_ble_rx_rp != uart_ble_rx_wp && hal_cb.intr_ble_uart_rx != NULL) {
+    hal_cb.intr_ble_uart_rx();
 #if defined(TWIC_DEBUG_LOG_UART)
-      twicUartLog("intr_ble_uart_rx called\r\n");
+    twicUartLog("intr_ble_uart_rx called\r\n");
 #endif
-    }
   }
 #endif
 }
@@ -2966,15 +2953,13 @@ void tz1smHalUartLowPower(bool enable)
       drv->SetModemControl(ARM_UART_RTS_SET);
     */
     drv->PowerControl(ARM_POWER_FULL);
-
-    return;
+  } else {
+    /* UART_TZ10xx rev 20659 accommodated this procedure.
+       drv->Configure();
+       drv->SetModemControl(ARM_UART_RTS_CLEAR);
+    */
+    Driver_UART2.PowerControl(ARM_POWER_LOW);
   }
-
-  /* UART_TZ10xx rev 20659 accommodated this procedure.
-     drv->Configure();
-     drv->SetModemControl(ARM_UART_RTS_CLEAR);
-  */
-  Driver_UART2.PowerControl(ARM_POWER_LOW);
   
   return;
 }
@@ -2982,14 +2967,47 @@ void tz1smHalUartLowPower(bool enable)
 bool tz1smHalUartDataAvailable(void)
 {
   ARM_DRIVER_UART *drv = &TWIC_UART_BLE_DRIVER_CH;
-  bool piled_up = false;
   
-  if (0 < drv->DataAvailable()) piled_up = true;
-  if (uart_ble_rx_rp != uart_ble_rx_wp) piled_up = true;
+  if (0 < drv->DataAvailable()) return true;
+  if (uart_ble_rx_rp != uart_ble_rx_wp) return true;
 
-  return piled_up;
+  return false;
 }
 #endif
+
+void tz1smHalSuppressHpd(const bool enable)
+{
+#if defined(TWIC_LECE_SUPPRESS_HPD)
+  ARM_DRIVER_UART *drv = &TWIC_UART_BLE_DRIVER_CH;
+  ARM_UART_STATUS uart_sts;
+  GPIO_STATUS gpio_sts;
+  
+  if (true == enable) {
+    gpio_sts = Driver_GPIO.Configure(TWIC_LECE_SUPPRESS_HPD_GPIO_NUMBER,
+                                     GPIO_DIRECTION_OUTPUT_2MA,
+                                     GPIO_EVENT_DISABLE, NULL);
+    if (GPIO_OK != gpio_sts) {
+      TWIC_GPIO_ERROR("Conf(SUPPRESS_HPD_GPIO_NUMBER) = %d\r\n", gpio_sts);
+    }
+    tz1smHalGpioWrite(TWIC_LECE_SUPPRESS_HPD_GPIO_NUMBER, false);
+    uart_sts = drv->SetModemControl(ARM_UART_RTS_SET); /* Active Lo : Lo */
+    if (ARM_UART_OK != uart_sts) {
+      TWIC_UART_ERROR("SetModemControl()=%d\r\n", uart_sts);
+    }
+  } else {
+    gpio_sts = Driver_GPIO.Configure(TWIC_LECE_SUPPRESS_HPD_GPIO_NUMBER,
+                                     GPIO_DIRECTION_INPUT_HI_Z,
+                                     GPIO_EVENT_DISABLE, NULL);
+    if (GPIO_OK != gpio_sts) {
+      TWIC_GPIO_ERROR("Conf(SUPPRESS_HPD_GPIO_NUMBER) = %d\r\n", gpio_sts);
+    }
+    uart_sts = drv->SetModemControl(ARM_UART_RTS_CLEAR); /* Active Lo : Hi */
+    if (ARM_UART_OK != uart_sts) {
+      TWIC_UART_ERROR("SetModemControl()=%d\r\n", uart_sts);
+    }
+  }
+#endif
+}
 
 #else
 
@@ -3025,6 +3043,8 @@ void tz1smHalUartGetData(void) {;}
 #if defined(TWIC_MCU_PERIPHERAL_POWER_PROFILE)
 void tz1smHalUartLowPower(bool enable) { return; }
 #endif
+
+void tz1smHalSuppressHpd(const bool enable) {;}
 
 #endif
 

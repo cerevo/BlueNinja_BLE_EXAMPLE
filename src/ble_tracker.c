@@ -22,6 +22,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+#include <stdio.h>
 #include "TZ10xx.h"
 #include "RTC_TZ10xx.h"
 #include "PMU_TZ10xx.h"
@@ -407,8 +408,6 @@ void connectionCompleteCb(const uint8_t status, const bool master, const uint64_
 
     //tz1smHalTimerStart(tz01_tracker_timer_id_notif, 500);
     TZ01_system_tick_start(USRTICK_NO_BLE_MAIN, 100);
-
-	//twicSetLed(TWIC_LED_GPIO_LED3, true);
 }
 
 void connectionUpdateCb(const uint8_t status, const uint16_t conn_interval, const uint16_t conn_latency)
@@ -427,9 +426,6 @@ void disconnectCb(const uint8_t status, const uint8_t reason)
 
     //tz1smHalTimerStop(tz01_tracker_timer_id_notif);
     TZ01_system_tick_stop(USRTICK_NO_BLE_MAIN);
-
-    /* BLE connection LED turn off. */
-	//twicSetLed(TWIC_LED_GPIO_LED3, false);
 }
 
 BLELib_RespForDemand mtuExchangeDemandCb(const uint16_t client_rx_mtu_size, uint16_t *resp_mtu_size)
@@ -510,12 +506,17 @@ void isrWakeupCb(void)
 	/* this callback is not used currently */
 }
 
-BLELib_Callbacks tz01_tracker_callbacks = {
+BLELib_CommonCallbacks tz01_common_callbacks = {
 	connectionCompleteCb,
 	connectionUpdateCb,
-	disconnectCb,
-	mtuExchangeDemandCb,
 	mtuExchangeResultCb,
+	disconnectCb,
+	isrNewEventCb,
+	isrWakeupCb
+  };
+
+BLELib_ServerCallbacks tz01_server_callbacks = {
+	mtuExchangeDemandCb,
 	notificationSentCb,
 	indicationConfirmCb,
 	updateCompleteCb,
@@ -523,9 +524,8 @@ BLELib_Callbacks tz01_tracker_callbacks = {
 	readoutDemandCb,
 	writeinDemandCb,
 	writeinPostCb,
-	isrNewEventCb,
-	isrWakeupCb
   };
+
 
 void rtc_periodic_handler(RTC_EVENT e)
 {
@@ -571,7 +571,7 @@ int ble_tracker_init(void)
 
 	/* initialize BLELib */
     int ret;
-	BLELib_initialize(tz01_tracker_bdaddr, BLELIB_BAUDRATE_2304, &tz01_tracker_callbacks);
+	BLELib_initialize(tz01_tracker_bdaddr, BLELIB_BAUDRATE_2304, &tz01_common_callbacks, &tz01_server_callbacks, NULL);
 	ret = BLELib_registerService(tz01_tracker_service_list, 3);
 	BLELib_setLowPowerMode(BLELIB_LOWPOWER_ON);
 
@@ -724,145 +724,7 @@ int ble_tracker_run(const bool en_9axis, const bool en_airpressure)
         default:
             break;
     }
-#if 0
-    /*
-     * Receive Button Notification.
-     *
-     */
-    if(TWIC_BUTTON_PUSH == button_state) {
-        switch(state){
-          case BLELIB_STATE_UNINITIALIZED:
-          case BLELIB_STATE_INITIALIZED:
-            break;
 
-          case BLELIB_STATE_ADVERTISE_READY:
-            ret = BLELib_startAdvertising(tz01_tracker_advertising_data, sizeof(tz01_tracker_advertising_data), tz01_tracker_scan_resp_data, sizeof(tz01_tracker_scan_resp_data));
-            if (ret == BLELIB_OK) {
-                twicSetLed(TWIC_LED_GPIO_LED3, true);
-            }
-            sprintf(msg, "BLELib_startAdvertising(): %d state=%d\r\n", ret, state);
-            TZ01_console_puts(msg);
-            break;
-
-          case BLELIB_STATE_ADVERTISING:
-            ret = BLELib_stopAdvertising();
-            if (ret == BLELIB_OK) {
-                twicSetLed(TWIC_LED_GPIO_LED3, false);
-            }
-            sprintf(msg, "BLELib_stopAdvertising(): %d\r\n", ret);
-            TZ01_console_puts(msg);
-            break;
-
-          case BLELIB_STATE_ONLINE:
-            ret = BLELib_disconnect(central_bdaddr);
-            sprintf(msg, "BLELib_disconnect(): %d\r\n", ret);
-            TZ01_console_puts(msg);
-            break;
-          default:
-            break;
-        }
-
-        twicButtonVoid(); /* removal of chattering */
-        tz1smHalTimerStart(tz01_tracker_timer_id_enable_button, 100);
-    }
-
-    if (TZ01_system_tick_check_timeout(USRTICK_NO_BLE_MAIN)) {
-        TZ01_system_tick_start(USRTICK_NO_BLE_MAIN, 100);
-
-        if (en_9axis) {
-            TZ01_motion_tracker_gyro_read(
-                NULL, NULL, NULL, &maesure_gyro[0].value, &maesure_gyro[1].value, &maesure_gyro[2].value
-            );
-            TZ01_motion_tracker_accel_read(
-                NULL, NULL, NULL, &maesure_acel[0].value, &maesure_acel[1].value, &maesure_acel[2].value
-            );
-            TZ01_motion_tracker_magnetometer_read(
-                NULL, NULL, NULL, &maesure_magm[0].value, &maesure_magm[1].value, &maesure_magm[2].value
-            );
-
-            TZ01_motion_tracker_compute_axis_angle(
-                maesure_acel[0].value, maesure_acel[1].value, maesure_acel[2].value,
-                &maesure_axangl[0].value, &maesure_axangl[1].value
-            );
-        }
-        if (en_airpressure) {
-            maesure_temp.value = TZ01_airpressure_temp_read();
-            maesure_airp.value = TZ01_airpressure_press_read();
-        }
-/**/
-        if (state == BLELIB_STATE_ONLINE) {
-            int len = 0;
-            if (tz01_tracker_notif_gyro_enable) {
-                len = sprintf(
-                    msg, "{gx:%0.1f,gy:%0.1f,gz:%0.1f}",
-                    maesure_gyro[0].value, maesure_gyro[1].value, maesure_gyro[2].value
-                );
-                ret = BLELib_notifyValue(BLE_GATT_UNIQUE_ID_TZ01_GYRO, msg, len);
-                if (ret != 0) {
-                    sprintf(msg, "%d BLELib_notifyValue(): %d\r\n", __LINE__, ret);
-                    TZ01_console_puts(msg);
-                }
-            }
-
-            if (tz01_tracker_notif_accel_enable) {
-                len = sprintf(
-                    msg, "{ax:%0.1f,ay:%0.1f,az:%0.1f}",
-                    maesure_acel[0].value, maesure_acel[1].value, maesure_acel[2].value
-                );
-                ret = BLELib_notifyValue(BLE_GATT_UNIQUE_ID_TZ01_ACCEL, msg, len);
-                if (ret != 0) {
-                    sprintf(msg, "%d BLELib_notifyValue(): %d\r\n", __LINE__, ret);
-                    TZ01_console_puts(msg);
-                }
-            }
-
-            if (tz01_tracker_notif_magnetometer_enable) {
-                len = sprintf(
-                    msg, "{mx:%0.1f,my:%0.1f,mz:%0.1f}",
-                    maesure_magm[0].value, maesure_magm[1].value, maesure_magm[2].value
-                );
-                ret = BLELib_notifyValue(BLE_GATT_UNIQUE_ID_TZ01_MAGNETOMETER, msg, len);
-                if (ret != 0) {
-                    sprintf(msg, "%d BLELib_notifyValue(): %d\r\n", __LINE__, ret);
-                    TZ01_console_puts(msg);
-                }
-            }
-
-            if (tz01_tracker_notif_axis_angle_enable) {
-                len = sprintf(
-                    msg, "{p:%0.4f,r:%0.4f}",
-                    maesure_axangl[0].value, maesure_axangl[1].value
-                );
-                ret = BLELib_notifyValue(BLE_GATT_UNIQUE_ID_TZ01_AXISANGLE, msg, len);
-                if (ret != 0) {
-                    sprintf(msg, "%d BLELib_notifyValue(): %d\r\n", __LINE__, ret);
-                    TZ01_console_puts(msg);
-                }
-            }
-
-            if (tz01_tracker_notif_temperature_enable) {
-                len = sprintf(msg, "{tp:%0.1f}", maesure_temp.value);
-                ret = BLELib_notifyValue(BLE_GATT_UNIQUE_ID_TZ01_TEMPERATURE, msg, len);
-                if (ret != 0) {
-                    sprintf(msg, "%d BLELib_notifyValue(): %d\r\n", __LINE__, ret);
-                    TZ01_console_puts(msg);
-                }
-            }
-
-            if (tz01_tracker_notif_airpressure_enable) {
-                len = sprintf(msg, "{ap:%0.1f}", maesure_airp.value);
-                ret = BLELib_notifyValue(BLE_GATT_UNIQUE_ID_TZ01_AIRPRESSURE, msg, len);
-                if (ret != 0) {
-                    sprintf(msg, "%d BLELib_notifyValue(): %d\r\n", __LINE__, ret);
-                    TZ01_console_puts(msg);
-                }
-            }
-            /* BLE Connection heart beat. */
-            twicSetLed(TWIC_LED_GPIO_LED3, led_blink);
-            led_blink = led_blink ? false : true;
-        }
-    }
-#endif
     if (has_event) {
         ret = BLELib_run();
         if (ret != 0) {

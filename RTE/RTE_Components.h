@@ -4,7 +4,7 @@
  *      *** Do not modify ! ***
  *
  * Project: 'Template' 
- * Target:  'RBTZ1000 RAM' 
+ * Target:  'RBTZ1000 Program Failsafe' 
  */
 
 #ifndef RTE_COMPONENTS_H

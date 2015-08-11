@@ -128,13 +128,28 @@ void twicUtDoEvent(void)
   tz1smHalOsYeild();
 }
 
+bool twicUtPeekInApiWithValue(twicConnIface_t *cif, uint8_t fidx,
+                              uint8_t *aret, uint8_t (*const data)[23])
+{
+  uint8_t _fidx;
+  twicStatus_t status;
+  
+  *aret = 0;
+  twicIfLeCeHkTimeout(60000, fidx);
+  status = twicIfIsDone(cif, &_fidx);
+  if ((TWIC_STATUS_EVENT_MESSAGE == status) && (_fidx == fidx)) {
+    if (TWIC_STATUS_OK == twicIfAcceptance(cif, aret, data)) return true;
+  }
+  return false;
+}
+
 bool twicUtPeekInApi(twicConnIface_t *cif, uint8_t fidx, uint8_t *aret)
 {
   uint8_t _fidx;
   twicStatus_t status;
   
   *aret = 0;
-  twicIfLeCeHkTimeout(6000, fidx);
+  twicIfLeCeHkTimeout(60000, fidx);
   status = twicIfIsDone(cif, &_fidx);
   if ((TWIC_STATUS_EVENT_MESSAGE == status) && (_fidx == fidx)) {
     if (TWIC_STATUS_OK == twicIfAcceptance(cif, aret, NULL)) return true;
@@ -149,7 +164,7 @@ bool twicUtDbPeekInApi(twicConnIface_t *cif, uint8_t fidx, uint8_t eidx,
   twicStatus_t status;
   
   *aret = 0;
-  twicIfLeCeHkTimeout(3000, fidx);
+  twicIfLeCeHkTimeout(60000, fidx);
   status = twicIfDbIsDone(cif, &_fidx, &_eidx, 0, 0);
   if ((TWIC_STATUS_EVENT_MESSAGE == status) && 
       (_fidx == fidx) && (_eidx == eidx)) {
@@ -166,18 +181,64 @@ bool twicUtCheckAndDoEvent(twicStatus_t status)
   return true;
 }
 
+/* Reference materials:
+ * BLUETOOTH SPECIFICATION Version 4.0 [Vol 2].
+ * Host Controller Interface Functional Specification.
+ * 7.8.5 LE Set Advertising Parameters Command.
+ * 7.8.9 LE Set Advertise Enable Command.
+ * @brief LE Set Advertise enable.
+ * This API is used to request the Controller to start advertising.
+ * @param twicConnIface_t * const cif 
+ * The pointer of the element of the GATT's resource to be used by
+ * this interface.
+ * @param uint16_t min_interval This is equivalent to the
+ * Advertising_Interval_Min.
+ * @param uint16_t max_interval This is equivalent to the
+ * Advertising_Interval_Max.
+ * @param uint8_t advertising_type This is equivalent to the Advertising_Type.
+ * TWIC_ADV_TYPE_IND         :Connectable undirected advertising.
+ * TWIC_ADV_TYPE_DIRECT_IND  :Connectable directed advertising.
+ * TWIC_ADV_TYPE_SCAN_IND    :Scannable undirected advertising.
+ * TWIC_ADV_TYPE_NONCONN_IND :Non connectable undirected advertising.
+ * @param uint8_t own_address_type This is equivalent to the Own_Address_Type.
+ * TWIC_ADDR_TYPE_PUBLIC_DEVICE_ADDRESS (0)
+ * TWIC_ADDR_TYPE_RANDOM_DEVICE_ADDRESS (1)
+ * @param uint8_t direct_address_type This is equivalent to the
+ * Direct_Address_Type.
+ * TWIC_ADDR_TYPE_PUBLIC_DEVICE_ADDRESS (0)
+ * TWIC_ADDR_TYPE_RANDOM_DEVICE_ADDRESS (1)
+ * @param uint64_t direct_address This is equivalent to the Direct_Address.
+ * @param uint8_t advertising_channel_map This is equivalent to the
+ * Advertising_Channel_Map.
+ * TWIC_ADV_CHANNEL_37  (0x01) xxxxxxx1b Enable channel 37 use
+ * TWIC_ADV_CHANNEL_38  (0x02) xxxxxx1xb Enable channel 38 use
+ * TWIC_ADV_CHANNEL_39  (0x04) xxxxx1xxb Enable channel 39 use
+ * TWIC_ADV_CHANNEL_ALL (0x07) 00000111b Default (all channels enabled)
+ * @param uint8_t advertising_filter_policy This is equivalent to the
+ * Advertising_Filter_Policy.
+ * TWIC_ADV_FILTER_ANY_ANY     (0)
+ * Allow Scan Request from Any, Allow Connect Request from Any.
+ * TWIC_ADV_FILTER_WHITE_ANY   (1)
+ * Allow Scan Request from White List Only, Allow Connect Request from Any.
+ * TWIC_ADV_FILTER_ANY_WHITE   (2)
+ * Allow Scan Request from Any, Allow Connect Request from White List Only.
+ * TWIC_ADV_FILTER_WHITE_WHITE (3)
+ * Allow Scan Request from White List Only, Allow Connect Request from
+ * White List Only. */
 #if defined(TWIC_UTIL_GA_SERVICE) || defined(TWIC_UTIL_DI_SERVICE) || \
   defined(TWIC_UTIL_HR_SERVICE) || defined(TWIC_UTIL_BP_SERVICE) ||   \
   defined(TWIC_UTIL_UD_SERVICE) || defined(TWIC_UTIL_CT_SERVICE) ||   \
   defined(TWIC_UTIL_NC_SERVICE) || defined(TWIC_UTIL_RU_SERVICE) ||   \
   defined(TWIC_UTIL_IA_SERVICE) || defined(TWIC_UTIL_HT_SERVICE) ||   \
   defined(TWIC_UTIL_UU_SERVICE)
-twicStatus_t twicUtLeDiscoverable(
-  twicConnIface_t * const cif,
-  uint16_t min_interval, uint16_t max_interval,
-  uint8_t advertising_type, uint8_t own_address_type,
-  uint8_t direct_address_type, uint64_t direct_address,
-  uint8_t advertising_channel_map, uint8_t advertising_filter_policy)
+twicStatus_t twicUtLeDiscoverable(twicConnIface_t * const cif,
+                                  uint16_t min_interval, uint16_t max_interval,
+                                  uint8_t advertising_type,
+                                  uint8_t own_address_type,
+                                  uint8_t direct_address_type,
+                                  uint64_t direct_address,
+                                  uint8_t advertising_channel_map,
+                                  uint8_t advertising_filter_policy)
 {
   twicStatus_t status = TWIC_STATUS_OK;
   uint8_t _ar;
@@ -232,6 +293,24 @@ twicStatus_t twicUtGattServerWriteCharacteristics(
   }
   if (_ar) return TWIC_STATUS_ERROR_IO;
   return TWIC_STATUS_OK;
+}
+
+twicStatus_t
+twicUtGattClientExgMtu(twicConnIface_t * const cif, const uint16_t rx_mtu_size)
+{
+#if defined(TWIC_API_GATTCLIENTEXGMTU)
+  twicStatus_t status = TWIC_STATUS_OK;
+  uint8_t _ar;
+
+  for (;twicUtPeekInApi(cif, TWIC_GATTCLIENTEXGMTU, &_ar) != true;) {
+    status = twicIfGattClientExgMtu(cif, rx_mtu_size);
+    if (false == twicUtCheckAndDoEvent(status)) return status;
+  }
+  if (_ar) return TWIC_STATUS_ERROR_IO;
+  return TWIC_STATUS_OK;
+#else
+  return TWIC_STATUS_OPERATION_NOT_PERMITTED;
+#endif
 }
 
 twicStatus_t twicUtGattServerExgMtuResponse(
@@ -349,6 +428,17 @@ uint8_t twicUtGattIndication(
   return _ar;
 }
 
+/* Reference materials:
+ * BLUETOOTH SPECIFICATION Version 4.0 [Vol 2].
+ * Host Controller Interface Functional Specification.
+ * 7.1.6 Disconnect Command.
+ *
+ * @brief Terminate an existing connection.
+ * This API is used to terminate an existing connection.
+ *
+ * @param twicConnIface_t * const cif 
+ * The pointer of the element of the GATT's resource to be used by
+ * this interface. */
 twicStatus_t twicUtLeStopAdvertising(twicConnIface_t * const cif)
 {
   twicStatus_t status = TWIC_STATUS_OK;
@@ -362,6 +452,17 @@ twicStatus_t twicUtLeStopAdvertising(twicConnIface_t * const cif)
   return TWIC_STATUS_OK;
 }
 
+/* Reference materials:
+ * BLUETOOTH SPECIFICATION Version 4.0 [Vol 2].
+ * Host Controller Interface Functional Specification.
+ * 7.8.9 LE Set Advertise Enable Command.
+ *
+ * @brief LE Set Advertise disable.
+ * This API is used to request the Controller to stop advertising.
+ *
+ * @param twicConnIface_t * const cif 
+ * The pointer of the element of the GATT's resource to be used by
+ * this interface. */
 twicStatus_t
 twicUtLeDisconnect(twicConnIface_t * const cif, const twicBdaddr_t * const bd)
 {
@@ -376,6 +477,32 @@ twicUtLeDisconnect(twicConnIface_t * const cif, const twicBdaddr_t * const bd)
   return TWIC_STATUS_OK;
 }
 
+/* @brief
+ * Switch the Low Power Consumption of the BLE.
+ *  
+ * This API enables the Low Power Consumption (LPC) of the Advertiser
+ * and the Idle.  Regarding the other roles, the LPC is specified by
+ * the parameter "conn_scan".  For example, if the "conn_scan" is
+ * "true", the LPC is enabled when the GAP Peripheral role is
+ * connected.
+ *  
+ * @param twicConnIface_t * const cif
+ * The pointer of the element of the GATT's resource to be used by
+ * this interface.
+ * @param bool conn_scan
+ * If the GAP role is the Scanner, this parameter must be set with
+ * "false".  This argument can be "true" if the GAP role is not
+ * Scanner.
+ * @param bool deep
+ * If the parameter is "true", the BLE Controller will stop working
+ * when it does not have any message.
+ * @note
+ * If the role is the Scanner, the "conn_scan" must be "false".
+ * The parameter "deep" should be attentively used.
+ * The parameter is supposed to be "true" when an application needs to
+ * stop using the BLE for a long time.
+ * Both "twicIfLeIoFinalize" and "twicIfLeIoInitialize" should be
+ * invoked if the BLE again starts.*/
 twicStatus_t
 twicUtLeCeLowPowerMode(twicConnIface_t * const cif, bool conn_scan, bool deep)
 {
@@ -390,6 +517,24 @@ twicUtLeCeLowPowerMode(twicConnIface_t * const cif, bool conn_scan, bool deep)
   return TWIC_STATUS_OK;
 }
 
+/* Reference materials:
+ * BLUETOOTH SPECIFICATION Version 4.0 [Vol 2].
+ * Host Controller Interface Functional Specification.
+ * 7.8.10 LE Set Scan Parameters Command.
+ * 7.8.11 LE Set Scan Enable Command.
+ *
+ * @brief LE Set Scan enable.
+ * This API is used to request the Controller to start scanning.
+ *
+ * @param twicConnIface_t * const cif 
+ * The pointer of the element of the GATT's resource to be used by
+ * this interface.
+ * @param uint16_t interval This is equivalent to the LE_Scan_Interval.
+ * @param uint16_t window This is equivalent to the LE_Scan_Window.
+ * @param bool active This is equivalent to the LE_Scan_Type.
+ * @param bool random This is equivalent to the Own_Address_Type.
+ * @param bool whitelist This is equivalent to the Scanning_Filter_Policy.
+ * @param bool duplicates This is equivalent to the Filter_Duplicates. */
 twicStatus_t twicUtLeSetScanEnable(twicConnIface_t * const cif,
                                    uint16_t interval, uint16_t window,
                                    bool active, bool random, bool whitelist,
@@ -418,6 +563,17 @@ twicStatus_t twicUtLeSetScanEnable(twicConnIface_t * const cif,
 #endif  
 }
 
+/* Reference materials:
+ * BLUETOOTH SPECIFICATION Version 4.0 [Vol 2].
+ * Host Controller Interface Functional Specification.
+ * 7.8.11 LE Set Scan Enable Command.
+ *
+ * @brief LE Set Scan disable.
+ * This API is used to request the Controller to stop scanning.
+ *
+ * @param twicConnIface_t * const cif 
+ * The pointer of the element of the GATT's resource to be used by
+ * this interface. */
 twicStatus_t twicUtLeSetScanDisable(twicConnIface_t * const cif)
 {
 #if defined(TWIC_CONFIG_ENABLE_SCAN)
@@ -436,6 +592,29 @@ twicStatus_t twicUtLeSetScanDisable(twicConnIface_t * const cif)
 #endif  
 }
 
+/* Reference materials:
+ * BLUETOOTH SPECIFICATION Version 4.0 [Vol 2].
+ * Host Controller Interface Functional Specification.
+ * 7.8.12 LE Create Connection Command.
+ *
+ * @brief LE Create Connection.
+ * This API is used to request the Controller to create a Link Layer
+ * connection to a connectable advertiser.
+ *
+ * @param twicConnIface_t * const cif 
+ * The pointer of the element of the GATT's resource to be used by
+ * this interface.
+ * @param uint16_t interval This is equivalent to the LE_Scan_Interval.
+ * @param uint16_t window This is equivalent to the LE_Scan_Window.
+ * @param bool whitelist This is equivalent to the Initiator_Filter_Policy.
+ * @param bool peer This is equivalent to the Peer_Address_Type.
+ * @param twicBdaddr_t * addr This is equivalent to the Peer_Address.
+ * @param uint16_t min This is equivalent to the Conn_Interval_Min.
+ * @param uint16_t max This is equivalent to the Conn_Interval_Max.
+ * @param uint16_t latency This is equivalent to the Conn_Latency.
+ * @param uint16_t timeout This is equivalent to the Supervision_Timeout.
+ * @param bool own This is equivalent to the Own_Address_Type.
+ */
 twicStatus_t twicUtLeCreateConnection(twicConnIface_t * const cif,
                                       uint16_t interval, uint16_t window,
                                       bool whitelist, bool peer,
@@ -456,6 +635,18 @@ twicStatus_t twicUtLeCreateConnection(twicConnIface_t * const cif,
   return TWIC_STATUS_OK;
 }
 
+/* Reference materials:
+ * BLUETOOTH SPECIFICATION Version 4.0 [Vol 2].
+ * Host Controller Interface Functional Specification.
+ * 7.8.13 LE Create Connection Cancel Command.
+ *
+ * @brief LE Create Connection Cancel.
+ * This API is used to request the Controller to cancel the
+ * "twicUtLeCreateConnection".
+ *
+ * @param twicConnIface_t * const cif 
+ * The pointer of the element of the GATT's resource to be used by
+ * this interface. */
 twicStatus_t twicUtLeCreateConnectionCancel(twicConnIface_t * const cif)
 {
   twicStatus_t status = TWIC_STATUS_OK;
@@ -483,6 +674,54 @@ twicUtLeCeLowPowerControlPinSetup(twicConnIface_t * const cif, bool pin)
   return TWIC_STATUS_OK;
 }
                                                
+/* @brief
+ * Switch the Low Power Consumption (LPC) to make the data rate higher.
+ *
+ * This API is used to make the data rate higher instead of the LPC.
+ * The delay of Host Delay relates to the data rate.
+ * The Host Wakeup function uses the Host Delay Setting.
+ * The Host Wakeup function must be disabled if the maximum speed is required.
+ * 
+ * If the comprehensive LPC of both HOST and BLE is used, by the
+ * following example, it is necessary to adequately inactivate the
+ * HOST.
+ * 
+ * High Speed (Disable the LPC):
+ * twicIfLeCeConnConfigureTz1em(TZ1EM_VF_HI, TZ1EM_OP_BLE_ACTIVE, ...);
+ * twicIfLeCeCnAdvConfigureTz1em(TZ1EM_VF_HI, TZ1EM_OP_BLE_ACTIVE, ...);
+ * twicIfLeCeIdleConfigureTz1em(TZ1EM_VF_HI, TZ1EM_OP_BLE_ACTIVE, ...);
+ * twicUtLeCeLowPower(, false, false, false);
+ * 
+ * Normal Speed (Enable the LPC):
+ * twicUtLeCeLowPower(, true, false, false);
+ * twicIfLeCeCnAdvConfigureTz1em(TZ1EM_VF_LO, TZ1EM_OP_BLE_DOZE_WRET, ...);
+ * twicIfLeCeIdleConfigureTz1em(TZ1EM_VF_LO, TZ1EM_OP_BLE_DOZE_WRET, ...);
+ * twicIfLeCeConnConfigureTz1em(TZ1EM_VF_LO, TZ1EM_OP_BLE_DOZE_WRET, ...);
+ * twicUtLeCeLowPower(, true, true, false);
+ * 
+ * Please refer to the example source code for information about the above step.
+ * 
+ * @param twicConnIface_t * const cif
+ * 
+ * The pointer of the element of the GATT's resource to be used by
+ * this interface.
+ * 
+ * @param bool control
+ * false:Disable the Host Delay Setting.
+ * true:Enable the Host Delay Setting.
+ * @param bool conn
+ * 
+ * true:Enable the LPC of the connection when the argument "control"
+ * is "true".
+ * 
+ * false:Disable the LPC of the connection when the argument "control"
+ * is "true".
+ * 
+ * @param bool shutdown
+ * true:Enable the shutdown feature when the argument "control" is "true".
+ * false:Disable the shutdown feature when the argument "control" is "true".
+ * @note
+ * The argument of the parameter "conn" must not be "true" for the Scanner. */
 twicStatus_t twicUtLeCeLowPower(twicConnIface_t * const cif, bool control,
                                 bool conn, bool shutdown)
 {
@@ -527,6 +766,34 @@ void twicUtGattClientCleanup(void)
   memset((void*)&twicUtCcb, 0, sizeof(twicIfLeClientCb_t));
 }
 #endif
+
+/* Reference materials:
+ * BLUETOOTH SPECIFICATION Version 4.0 [Vol 3].
+ * Generic Attribute Profile (GATT).
+ * 4.4.2 Discover Primary Service by Service UUID
+ *
+ * @brief Discover Primary Service by Service UUID.
+ * This API is used by a client to discover a specific primary service
+ * on a server when only the Service UUID is known.
+ * @param twicConnIface_t * const cif 
+ * The pointer of the element of the GATT's resource to be used by
+ * this interface.
+ * @param uint16_t start_handle The Starting Handle shall be set to 0x0001.
+ * @param uint16_t end_handle The Ending Handle shall be set to 0xFFFF.
+ * @param uint64_t uuid_lsb The Attribute Protocol Find By
+ * Type Value Request shall be used with the Attribute Type parameter
+ * set to the UUID for -A«Primary Service» and the Attribute Value set$)B
+ * to the 16-bit Bluetooth UUID or 128-bit UUID for the specific
+ * primary service.
+ * If UUID is 7905F431-B5CE-4E99-A40F-4B1E122D00D0, this parameter
+ * shall be set with argument 0xA40F4B1E122D00D0.
+ * @param uint64_t uuid_msb
+ * If UUID is 7905F431-B5CE-4E99-A40F-4B1E122D00D0, this parameter
+ * shall be set with argument 0x7905F431B5CE4E99.
+ * @param uint8_t uuid_len
+ * If UUID is 7905F431-B5CE-4E99-A40F-4B1E122D00D0, this parameter
+ * shall be set with argument 16.
+ */
 #if defined(TWIC_API_GATTCLIENTDISCOVERPRIMARYSERVICEBYSERVICEUUID)
 twicStatus_t
 twicUtGattDiscoverPrimaryServiceByServiceUuid(twicConnIface_t * const cif,
@@ -549,6 +816,26 @@ twicUtGattDiscoverPrimaryServiceByServiceUuid(twicConnIface_t * const cif,
   return TWIC_STATUS_OK;
 }
 #endif
+
+/* Reference materials:
+ * BLUETOOTH SPECIFICATION Version 4.0 [Vol 3].
+ * Generic Attribute Profile (GATT)
+ * 4.6.1 Discover All Characteristics of a Service.
+ *
+ * @brief Discover Primary Service by Service UUID.
+ * This API is used by a client to find all the characteristic
+ * declarations within a service definition on a server when only the
+ * service handle range is known. The service specified is identified
+ * by the service handle range.
+ * @param twicConnIface_t * const cif 
+ * The pointer of the element of the GATT's resource to be used by
+ * this interface.
+ * @param uint16_t start_handle
+ * The Starting Handle shall be set to starting handle of the
+ * specified service.
+ * @param uint16_t end_handle
+ * The Ending Handle shall be set to the ending handle of the
+ * specified service. */
 #if defined(TWIC_API_GATTCLIENTDISCOVERALLCHARACTERISTICS)
 twicStatus_t
 twicUtGattClientDiscoverAllCharacteristics(twicConnIface_t * const cif,
@@ -568,10 +855,34 @@ twicUtGattClientDiscoverAllCharacteristics(twicConnIface_t * const cif,
   return TWIC_STATUS_OK;
 }
 #endif
+
+/* Reference materials:
+ * BLUETOOTH SPECIFICATION Version 4.0 [Vol 3].
+ * Generic Attribute Profile (GATT)
+ * 4.7.1 Discover All Characteristic Descriptors.
+ *
+ * @brief Discover All Characteristic Descriptors.
+ * This API is used by a client to find all the characteristic
+ * descriptor's Attribute Handles and Attribute Types within a
+ * characteristic definition when only the characteristic handle range
+ * is known. The characteristic specified is identified by the
+ * characteristic handle range.
+ *
+ * @param twicConnIface_t * const cif 
+ * The pointer of the element of the GATT's resource to be used by
+ * this interface.
+ * @param uint16_t start_handle
+ * The Attribute Protocol Find Information Request shall be used with
+ * the Starting Handle set to the handle of the specified
+ * characteristic value + 1.
+ * @param uint16_t end_handle
+ * The Ending Handle set to the ending handle of the specified
+ * characteristic. */
 #if defined(TWIC_API_GATTCLIENTDISCOVERALLDESCRIPTORS)
-twicStatus_t twicUtGattClientDiscoverAllDescriptors(twicConnIface_t * const cif,
-                                                    uint16_t start_handle,
-                                                    uint16_t end_handle)
+twicStatus_t
+twicUtGattClientDiscoverAllDescriptors(twicConnIface_t * const cif,
+                                       uint16_t start_handle,
+                                       uint16_t end_handle)
 {
   twicStatus_t status = TWIC_STATUS_OK;
   uint8_t _ar;
@@ -586,6 +897,28 @@ twicStatus_t twicUtGattClientDiscoverAllDescriptors(twicConnIface_t * const cif,
   return TWIC_STATUS_OK;
 }
 #endif
+
+/* Reference materials:
+ * BLUETOOTH SPECIFICATION Version 4.0 [Vol 3].
+ * Generic Attribute Profile (GATT)
+ * 4.12.3 Write Characteristic Descriptors.
+ *
+ * @brief Write Characteristic Descriptors.
+ * This API is used to write a characteristic descriptor value to a
+ * server when the client knows the characteristic descriptor handle.
+ *
+ * @param twicConnIface_t * const cif 
+ * The pointer of the element of the GATT's resource to be used by
+ * this interface.
+ * @param uint16_t handle
+ * The Attribute Handle parameter shall be set to the characteristic
+ * descriptor handle.
+ * @param uint8_t length
+ * The Attribute Value lenght parameter is the lenght of the new
+ * Attribute Value.
+ * @param uint8_t * const value
+ * The Attribute Value parameter shall be set to the new
+ * characteristic descriptor value. */
 #if defined(TWIC_API_GATTCLIENTWRITECHARACTERISTICDESCRIPTOR)
 twicStatus_t
 twicUtGattClientWriteCharacteristicDescriptor(twicConnIface_t * const cif,
@@ -599,6 +932,47 @@ twicUtGattClientWriteCharacteristicDescriptor(twicConnIface_t * const cif,
          cif, TWIC_GATTCLIENTWRITECHARACTERISTICDESCRIPTOR, &_ar) != true;) {
     status = twicIfLeGattClientWriteCharacteristicDescriptor(cif, handle,
                                                              length, value);
+    if (false == twicUtCheckAndDoEvent(status)) return status;
+  }
+  if (_ar) return TWIC_STATUS_ERROR_IO;
+  return TWIC_STATUS_OK;
+}  
+#endif
+
+/* Reference materials:
+ * BLUETOOTH SPECIFICATION Version 4.0 [Vol 3].
+ * Generic Attribute Profile (GATT)
+ * 4.9.3 Write Characteristic Value.
+ *
+ * @brief Write Characteristic Descriptors.
+ * This API is used to write a characteristic value to a server when
+ * the client knows the characteristic value handle.
+ *
+ * @param twicConnIface_t * const cif 
+ * The pointer of the element of the GATT's resource to be used by
+ * this interface.
+ * @param uint16_t handle
+ * The Attribute Handle parameter shall be set to the characteristic
+ * value handle.
+ * @param uint8_t length
+ * The Attribute Value lenght parameter is the lenght of the new
+ * Attribute Value.
+ * @param uint8_t * const value
+ * The Attribute Value parameter shall be set to the new
+ * characteristic value. */
+#if defined(TWIC_API_GATTCLIENTWRITECHARACTERISTICVALUE)
+twicStatus_t
+twicUtGattClientWriteCharacteristicValue(twicConnIface_t * const cif,
+                                         uint16_t handle, uint8_t length,
+                                         uint8_t * const value)
+{
+  twicStatus_t status = TWIC_STATUS_OK;
+  uint8_t _ar;
+
+  for (;twicUtPeekInApi(
+         cif, TWIC_GATTCLIENTWRITECHARACTERISTICVALUE, &_ar) != true;) {
+    status = twicIfLeGattClientWriteCharacteristicValue(cif, handle, length,
+                                                        value);
     if (false == twicUtCheckAndDoEvent(status)) return status;
   }
   if (_ar) return TWIC_STATUS_ERROR_IO;

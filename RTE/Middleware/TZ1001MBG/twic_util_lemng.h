@@ -52,6 +52,8 @@ extern void twicUtPrintBdAddr(const uint8_t * const addr);
 extern void twicUtDisplayTwicErrorList(void);
 
 extern void twicUtDoEvent(void);
+extern bool twicUtPeekInApiWithValue(twicConnIface_t *cif, uint8_t fidx,
+                                     uint8_t *aret, uint8_t (*const data)[23]);
 extern bool twicUtPeekInApi(twicConnIface_t *cif, uint8_t fidx, uint8_t *aret);
 extern bool twicUtDbPeekInApi(twicConnIface_t *cif, uint8_t fidx, uint8_t eidx,
                               uint8_t *aret);
@@ -74,6 +76,9 @@ extern twicStatus_t
 twicUtGattServerWriteCharacteristics(twicConnIface_t * const cif,
                                      const uint8_t cha, const uint16_t length,
                                      const uint8_t * const value);
+extern twicStatus_t
+twicUtGattClientExgMtu(twicConnIface_t * const cif, const uint16_t rx_mtu_size);
+
 extern twicStatus_t twicUtGattServerExgMtuResponse(twicConnIface_t * const cif,
                                                    const uint16_t rx_mtu_size);
 extern twicStatus_t
@@ -163,6 +168,13 @@ twicStatus_t
 twicUtGattClientWriteCharacteristicDescriptor(twicConnIface_t * const cif,
                                               uint16_t handle, uint8_t length,
                                               uint8_t * const value);
+#endif
+
+#if defined(TWIC_API_GATTCLIENTWRITECHARACTERISTICVALUE)
+twicStatus_t
+twicUtGattClientWriteCharacteristicValue(twicConnIface_t * const cif,
+                                         uint16_t handle, uint8_t length,
+                                         uint8_t * const value);
 #endif
 
 #endif /* __TWIC_UTIL_LEMNG_H__ */

@@ -148,6 +148,7 @@ static void print_reasoncode(const twicSmReasonCode_t reason)
     break;
   default:
     twicTrace();
+    twicLog("reason = 0x%x\r\n", reason);
     break;
   }
 }
@@ -191,6 +192,8 @@ void twicUtSmpSetup(void)
   twicUtSmpFlags.keyring_is_stored = false;
   twicUtSmpFlags.r_pairing_confirmation = false;
   twicUtSmpFlags.r_send_bonding_information = false;
+  twicUtSmpFlags.r_kb_respond_passkey = false;
+  twicUtSmpFlags.r_dp_respond_passkey = false;  
   twicUtSmpFlags.i_bonding_information = false;
   twicUtSmpFlags.i_send_bonding_information = false;
   twicUtSmpFlags.encryption_done = false;
@@ -262,11 +265,16 @@ static void smpi_pairing_response(const void * const cif, const uint8_t status,
   print_pairingfeature(resp);
 }
 
-static void smpr_input_passkey(const void * cif) { twicTrace(); }
+static void smpr_input_passkey(const void * cif)
+{
+  twicTrace();
+  twicUtSmpFlags.r_kb_respond_passkey = true;  
+}
 static void smpi_input_passkey(const void * cif) { twicTrace(); }
 static void smpr_display_passkey(const void * const cif)
 {
   twicTrace();
+  twicUtSmpFlags.r_dp_respond_passkey = true;  
 }
 
 static void smpi_display_passkey(const void * const cif) { twicTrace(); }
@@ -879,6 +887,27 @@ twicUtLeSmSlvBondingInformationNegativeReply(twicConnIface_t * const cif)
   return TWIC_STATUS_OK;
 }  
 
+/* Reference materials:
+ * BLUETOOTH SPECIFICATION Version 4.0 [Vol 3].
+ * Security Manager Specification.
+ * 3.5.1 Pairing Request.
+ * 3.5.2 Pairing Response.
+ * 3.5.3 Pairing Confirm.
+ * 3.6.7 Security Request.
+ *
+ * The API is concatenated to the callback below.
+ * void (*pairing_demand)(const twicPairingFeature_t *const resp)
+ * The callback API will be invoked when the Security Request is
+ * issued from the local device. This callback is also invoked when
+ * Pairing Request is received.  To Perform the Pairing Response and
+ * the Pairing Confirmation, the API should be invoked when the
+ * callback function occures.  The elements of the Pairing Response
+ * and the Pairing Confirmation are set in this API.  Please refer to
+ * the "3.5.2 Pairing Response' for the IO Capability, OOB data flag,
+ * AuthReq, Maximum Encryption Key Size, Initiator Key Distribution,
+ * Responder Key Distribution and the Confirm value which is
+ * internally resolved.  The API can be modified when an application
+ * needs to change the elements. */
 static twicStatus_t twicUtLeSmSlvPairingConfirm(twicConnIface_t * const cif)
 {
   twicStatus_t status = TWIC_STATUS_OK;
@@ -887,11 +916,11 @@ static twicStatus_t twicUtLeSmSlvPairingConfirm(twicConnIface_t * const cif)
   for (;twicUtPeekInApi(cif, TWIC_LESMSLVPAIRINGCONFIRM, &_ar) != true;) {
     status = twicIfLeSmSlvPairingConfirm(
       cif,
-      TWIC_SMP_IO_CAPABILITY_NOINPUT_NO_OUTPUT, /* io_capability */
+      TWIC_UTIL_LESMP_SLV_IO_CAP, /* io_capability */
       false, /* oob_data_flag_auth_present */
       true,  /* auth_req_bonding */
       false, /* auth_req_mitm_protection, */
-      0x10,  /* max_enc_key_size */
+      TWIC_UTIL_SLV_MAX_ENC_KEY_SIZE,  /* max_enc_key_size */
       true,  /* init_key_dist_enckey */
       true,  /* init_key_dist_idkey */
       true,  /* init_key_dist_sign */
@@ -912,11 +941,11 @@ static twicStatus_t twicUtLeSmMasPairingRequest(twicConnIface_t * const cif)
   for (;twicUtPeekInApi(cif, TWIC_LESMMASPAIRINGREQUEST, &_ar) != true;) {
     status = twicIfLeSmMasPairingRequest(
       cif,
-      TWIC_SMP_IO_CAPABILITY_DISPLAY_YES_NO, /* io_capability */
+      TWIC_UTIL_LESMP_MAS_IO_CAP, /* io_capability */
       false, /* oob_data_flag_auth_present */
       true,  /* auth_req_bonding */
       false, /* auth_req_mitm_protection, */
-      0x10,  /* max_enc_key_size */
+      TWIC_UTIL_MAS_MAX_ENC_KEY_SIZE,  /* max_enc_key_size */
       true,  /* init_key_dist_enckey */
       true,  /* init_key_dist_idkey */
       true,  /* init_key_dist_sign */
@@ -944,19 +973,165 @@ static twicStatus_t twicUtLeSmMasStartEncryption(twicConnIface_t * const cif)
   return TWIC_STATUS_OK;
 }  
 
-static twicStatus_t twicUtLeSmSlvSecurityRequest(twicConnIface_t * const cif)
+/* BLUETOOTH SPECIFICATION Version 4.0 [Vol 3].
+ * Security Manager Specification.
+ * 2.4.6 Slave Security Request.
+ *
+ * The slave device may request security by transmitting a Security
+ * Request to the master. When a master device receives a Security
+ * Request it may encrypt the link, initiate the pairing procedure, or
+ * reject the request. */
+static twicStatus_t
+twicUtLeSmSlvSecurityRequest(twicConnIface_t * const cif,
+                             const bool auth_req_mitm_protection)
 {
   twicStatus_t status = TWIC_STATUS_OK;
   uint8_t _ar;
   
   for (;twicUtPeekInApi(cif, TWIC_LESMSLVSECURITYREQUEST, &_ar) != true;) {
-    status = twicIfLeSmSlvSecurityRequest(cif, true, false);
+    status = twicIfLeSmSlvSecurityRequest(cif, true, auth_req_mitm_protection);
     if (false == twicUtCheckAndDoEvent(status)) return status;
   }
   if (_ar) return TWIC_STATUS_ERROR_IO;
   return TWIC_STATUS_OK;
 }
 
+/* passkey: 000,000 to 999,999. ex)
+            123456 is 0x0001E240 = {0x40, 0xE2, 0x01, 0x00} */
+static twicStatus_t
+twicUtLeSmSlvKbPasskeyEntryReply(twicConnIface_t * const cif,
+                                 twicPasskeyEntry_t * passkey)
+{
+  twicStatus_t status = TWIC_STATUS_OK;
+  uint8_t _ar;
+  
+  for (;twicUtPeekInApi(cif, TWIC_LESMSLVKBPASSKEYREPLY, &_ar) != true;) {
+    status = twicIfLeSmSlvKbPasskeyEntryReply(cif, passkey);
+    if (false == twicUtCheckAndDoEvent(status)) return status;
+  }
+  if (_ar) return TWIC_STATUS_ERROR_IO;
+  return TWIC_STATUS_OK;
+}
+
+static twicStatus_t
+twicUtLeSmSlvKbPasskeyEntryNegativeReply(twicConnIface_t * const cif)
+{
+  twicStatus_t status = TWIC_STATUS_OK;
+  uint8_t _ar;
+  
+  for (;twicUtPeekInApi(cif,TWIC_LESMSLVKBPASSKEYNEGATIVEREPLY,&_ar) != true;) {
+    status = twicIfLeSmSlvKbPasskeyEntryNegativeReply(cif);
+    if (false == twicUtCheckAndDoEvent(status)) return status;
+  }
+  if (_ar) return TWIC_STATUS_ERROR_IO;
+  return TWIC_STATUS_OK;
+}
+
+/* passkey: 000,000 to 999,999. ex)
+            123456 is 0x0001E240 = {0x40, 0xE2, 0x01, 0x00} */
+static twicStatus_t
+twicUtLeSmSlvDpPasskeyEntryReply(twicConnIface_t * const cif,
+                                 twicPasskeyEntry_t * passkey)
+{
+  twicStatus_t status = TWIC_STATUS_OK;
+  uint8_t _ar;
+  
+  for (;twicUtPeekInApi(cif, TWIC_LESMSLVDPPASSKEYREPLY, &_ar) != true;) {
+    status = twicIfLeSmSlvDpPasskeyEntryReply(cif, passkey);
+    if (false == twicUtCheckAndDoEvent(status)) return status;
+  }
+  if (_ar) return TWIC_STATUS_ERROR_IO;
+  return TWIC_STATUS_OK;
+}
+
+static twicStatus_t
+twicUtLeSmSlvDpPasskeyEntryNegativeReply(twicConnIface_t * const cif)
+{
+  twicStatus_t status = TWIC_STATUS_OK;
+  uint8_t _ar;
+  
+  for (;twicUtPeekInApi(cif,TWIC_LESMSLVDPPASSKEYNEGATIVEREPLY,&_ar) != true;) {
+    status = twicIfLeSmSlvDpPasskeyEntryNegativeReply(cif);
+    if (false == twicUtCheckAndDoEvent(status)) return status;
+  }
+  if (_ar) return TWIC_STATUS_ERROR_IO;
+  return TWIC_STATUS_OK;
+}
+
+/* Reference materials:
+ * BLUETOOTH SPECIFICATION Version 4.0 [Vol 3].
+ * Security Manager Specification.
+ * 3.5.1 Pairing Request.
+ *
+ * The initiator starts the Pairing Feature Exchange by invoking this
+ * API to send a Pairing Request command to the responding device.
+ *
+ * The element of the Pairing Request Packet is set in this API by the
+ * "twicUtLeSmMasPairingRequest".  Please refer to the Reference
+ * materials "3.5.1 Pairing Request" for the element.  Each
+ * application is supposed to change the parameter of the element by
+ * modifying this API and the "twicUtLeSmMasPairingRequest" if the
+ * application needs other specifications.
+ *
+ * The element which an application is able to change is below.
+ *
+ * io_capability : Table 3.3 defines the values which are used when
+ * exchanging IO capabilities (see Section 2.3.2).
+ *
+ * oob_data_present : Table 3.4 defines the values which are used when
+ * indicating whether OOB authentication data is available (see
+ * Section 2.3.3).
+ *
+ * auth_req_bonding : This field that indicates the type of bonding
+ * being requested by the responding device as defined in Table 3.5.
+ *
+ * auth_req_mitm_protection : 1-bit flag that is set to one if the
+ * device is requesting MITM protection, otherwise it shall be set to
+ * 0. A device sets the MITM flag to one to request an Authenticated
+ * security property for STK.
+ *
+ * max_enc_key_size : This value defines the maximum encryption key
+ * size in octets that the device can support. The maximum key size
+ * shall be in the range 7 to 16 octets.
+ *
+ * The Initiator Key Distribution field defines which keys the
+ * initiator shall distribute and use during the Transport Specific
+ * Key Distribution phase (see Section 2.4.3). The Initiator Key
+ * Distribution field format and usage are defined in Section 3.6.1.
+ *
+ * init_key_dist_enckey : EncKey is a 1-bit field that is set to one
+ * to indicate that the device shall distribute LTK using the
+ * Encryption Information command followed by EDIV and Rand using the
+ * Master Identification command.
+ *
+ * init_key_dist_idkey : IdKey is a 1-bit field that is set to one to
+ * indicate that the device shall distribute IRK using the Identity
+ * Information command followed by its public device or static random
+ * address using Identity Address Information.
+ *
+ * init_key_dist_sign : Sign is a 1-bit field that is set to one to
+ * indicate that the device shall distribute CSRK using the Signing
+ * Information command.
+ *
+ * The Responder Key Distribution field defines which keys the
+ * responder shall distribute and use during the Transport Specific
+ * Key Distribution phase (see Section 2.4.3). The Responder Key
+ * Distribution field format and usage are defined in Section 3.6.1.
+ *
+ * resp_key_dist_enckey : EncKey is a 1-bit field that is set to one
+ * to indicate that the device shall distribute LTK using the
+ * Encryption Information command followed by EDIV and Rand using the
+ * Master Identification command.
+ *
+ * resp_key_dist_idkey : IdKey is a 1-bit field that is set to one to
+ * indicate that the device shall distribute IRK using the Identity
+ * Information command followed by its public device or static random
+ * address using Identity Address Information.
+ *
+ * resp_key_dist_sign : Sign is a 1-bit field that is set to one to
+ * indicate that the device shall distribute CSRK using the Signing
+ * Information command.
+ */
 void twicUtSmpMasPairingRequest(twicConnIface_t * const cif)
 {
   twicLog("'Mas Pairing Request'.\r\n");
@@ -973,6 +1148,20 @@ void twicUtSmpMasPairingRequest(twicConnIface_t * const cif)
   }
 }
 
+/* Reference materials:
+ * BLUETOOTH SPECIFICATION Version 4.0 [Vol 3].
+ * Security Manager Specification.
+ * 6.6 START ENCRYPTION.
+ * 
+ * This API is issued by an ppplication on the Master device to
+ * encrypt the link using LTK. After the link is encrypted the
+ * callback is invoked.
+ *
+ * void (*encryption_change)(
+ *   const void * const connif, const twicSmReasonCode_t reason,
+ *   const uint8_t key_type, const bool encryption_enable,
+ *   const uint8_t encryption_key_size);
+ */
 void twicUtSmMasStartEncryption(twicConnIface_t * const cif)
 {
   twicUtSmpFlags.encryption_done = false;
@@ -988,19 +1177,42 @@ void twicUtSmMasStartEncryption(twicConnIface_t * const cif)
   }
 }
 
+/* BLUETOOTH SPECIFICATION Version 4.0 [Vol 3].
+ * Security Manager Specification.
+ * 2.4.6 Slave Security Request.
+ *
+ * The slave device may request security by transmitting a Security
+ * Request to the master. When a master device receives a Security
+ * Request it may encrypt the link, initiate the pairing procedure, or
+ * reject the request.
+ *
+ * The Security Request command includes the required security
+ * properties. A security property of MITM protection required shall
+ * only be set if the slave's IO capabilities would allow the Passkey
+ * Entry association model to be used or out of band authentication
+ * data is available.
+ *
+ * This implementation does not expect the MITM protection. The
+ * "auth_req_mitm_protection" can be set "true" if the MITM protection
+ * is required.
+ */
 void twicUtSmpSlvSecurityRequest(twicConnIface_t * const cif)
 {
+  const bool auth_req_mitm_protection = false;
+
   if (true == twicUtSmpFlags.keyring_is_stored) {
     twicLog("Keyring is already stored.\r\n");
     return;
   }
   twicUtSmpFlags.encryption_done = false;
   twicLog("Issue 'Slv Security Request'.\r\n");
-  twicUtLeSmSlvSecurityRequest(cif);
+  twicUtLeSmSlvSecurityRequest(cif, auth_req_mitm_protection);
 }
 
 void twicUtSmpRun(twicConnIface_t * const cif)
 {
+  twicPasskeyEntry_t passkey;
+  
   if (true == twicUtSmpFlags.r_send_bonding_information) {
     if (false == twicUtSmpFlags.keyring_is_stored &&
         true == twicUtReadBondingInformation(&keyring)) {
@@ -1010,16 +1222,39 @@ void twicUtSmpRun(twicConnIface_t * const cif)
       twicLog("'Bonding Information Reply'.\r\n");
       twicUtLeSmSlvBondingInformationReply(cif);
       twicUtSmpFlags.r_send_bonding_information = false;
+      twicLog("'Bonding Information Reply (Done)'.\r\n");
     } else {
       twicLog("'Bonding Information Negative Reply'.\r\n");
       twicUtLeSmSlvBondingInformationNegativeReply(cif);
       twicUtSmpFlags.r_send_bonding_information = false;
+      twicLog("'Bonding Information Negative Reply (Done)'.\r\n");
     }
   }
   if (true == twicUtSmpFlags.r_pairing_confirmation) {
     twicLog("'Pairing Confirm'.\r\n");
     twicUtLeSmSlvPairingConfirm(cif);
     twicUtSmpFlags.r_pairing_confirmation = false;
+    twicLog("'Pairing Confirm (Done)'.\r\n");    
+  }
+  if (true == twicUtSmpFlags.r_kb_respond_passkey) {
+    twicLog("'Input Kb Passkey'.\r\n");
+    if (true == twicUtReadPasskeyEntry(&passkey)) {
+      twicUtLeSmSlvKbPasskeyEntryReply(cif, &passkey);
+    } else {
+      twicUtLeSmSlvKbPasskeyEntryNegativeReply(cif);
+    }
+    twicUtSmpFlags.r_kb_respond_passkey = false;
+    twicLog("'Input Kb Passkey (Done)'.\r\n");
+  }
+  if (true == twicUtSmpFlags.r_dp_respond_passkey) {
+    twicLog("'Input Dp Passkey'.\r\n");
+    if (true == twicUtReadPasskeyEntry(&passkey)) {
+      twicUtLeSmSlvDpPasskeyEntryReply(cif, &passkey);
+    } else {
+      twicUtLeSmSlvDpPasskeyEntryNegativeReply(cif);
+    }
+    twicUtSmpFlags.r_dp_respond_passkey = false;
+    twicLog("'Input Dp Passkey (Done)'.\r\n");
   }
 }
 

@@ -347,6 +347,17 @@ typedef void(*tz1smHalWakeupCb_t)(tz1smHalPcd_t, tz1smHalOm_t, tz1smHalVf_t, uin
 #include "TZ10xx.h"
 #include "PMU_TZ10xx.h"
 
+/* Connect to BLE GPIO2. (IN)
+ * Low:  Active mode,
+ * High: Low Power mode */
+#define TZ1SM_HAL_GPIO_BLE_STATUS (PMU_IO_FUNC_GPIO_29)
+
+/* Connect to BLE GPIO1. (IN)
+ * Low:  Host Wake up,
+ * High: Permit to Low Power mode(MCU) */
+#define TZ1SM_HAL_GPIO_BLE_HOST_WAKE_UP (PMU_IO_FUNC_GPIO_30)
+/* Check for TZ1SM_HAL_WAKE_FACTOR_GPIO_30 */
+
 typedef enum tz1smHalWe { /* weit event */
   TZ1SM_HAL_ACT_EVENT_DISABLE = PMU_WAKEUP_EVENT_DISABLE,
   TZ1SM_HAL_ACT_EVENT_EDGE_POS = PMU_WAKEUP_EVENT_EDGE_POS,
@@ -499,17 +510,6 @@ void tz1smHalRegisterCb(const tz1smHalCb_t * const cb);
  * High: No Reset */
 #define TZ1SM_HAL_GPIO_BLE_RESETX 28
 
-/* Connect to BLE GPIO2. (IN)
- * Low:  Active mode,
- * High: Low Power mode */
-#define TZ1SM_HAL_GPIO_BLE_STATUS 29
-
-/* Connect to BLE GPIO1. (IN)
- * Low:  Host Wake up,
- * High: Permit to Low Power mode(MCU) */
-#define TZ1SM_HAL_GPIO_BLE_HOST_WAKE_UP 30
-/* Check for TZ1SM_HAL_WAKE_FACTOR_GPIO_30 */
-
 /* Connect to BLE GPIO0. (OUT)
  * Low:  Permit to Low Power mode,
  * High: Active mode */
@@ -557,6 +557,12 @@ tz1smHalStatus_t tz1smHalGpioWrite(const uint32_t pnr, bool const level);
  */
 tz1smHalStatus_t tz1smHalGpioBleReset(const bool reset);
 
+/*
+ * @brief
+ * Suppress HPD
+ * @param[in]  enable (true:Suppress HPD, false:no interference)
+ */
+void tz1smHalSuppressHpd(const bool enable);
 
 /*
  * @brief
@@ -565,6 +571,12 @@ tz1smHalStatus_t tz1smHalGpioBleReset(const bool reset);
  */
 
 bool tz1smHalGpioBleLowpowerStatus(void);
+
+/*
+ * @brief
+ * Read GPIO BLE Host Wakeup Pin(true:UART is Active, false:No data)
+ */
+bool tz1smHalGpioBleHostWakeupStatus(void);
 
 /*
  * @brief
@@ -586,6 +598,7 @@ void tz1smHalGpioInit(void);
 void tz1smHalGpioUnInit(void);
 bool tz1smHalGpioBleHostLowpowerStatus(void);
 bool tz1smHalGpioBleLowpowerStatus(void);
+bool tz1smHalGpioBleHostWakeupStatus(void);
 tz1smHalStatus_t tz1smHalGpioBleReset(const bool reset);
 
 #warning V0.0.1 is no supporting the other GPIO Drivers other than CMSIS_GPIO.

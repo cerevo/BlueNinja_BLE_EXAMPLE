@@ -63,10 +63,11 @@ typedef struct {
   uint8_t keyring_is_stored : 1;
   uint8_t r_pairing_confirmation : 1;
   uint8_t r_send_bonding_information : 1;
+  uint8_t r_kb_respond_passkey : 1;
+  uint8_t r_dp_respond_passkey : 1;
   uint8_t i_bonding_information : 1;
   uint8_t i_send_bonding_information : 1;
   uint8_t encryption_done : 1;
-  uint8_t pad : 2;
 } twicUtSmpFlags_t;
 
 extern twicUtSmpFlags_t twicUtSmpFlags;
@@ -83,11 +84,56 @@ extern void twicUtSmpMasPairingRequest(twicConnIface_t * const cif);
 extern void twicUtSmMasStartEncryption(twicConnIface_t * const cif);
 extern void twicUtSmpSlvSecurityRequest(twicConnIface_t * const cif);
 extern void twicUtSmpRun(twicConnIface_t * const cif);
+
+/* @brief Store the bonding information.
+ *
+ * This API must be provided by such application which need the
+ * authentication and the encryption to store the bonding information.
+ * If the "erase" is the "true", please remove all the "Copied keyring".
+ * Otherwise, please have and store the soft copy of the "keyring".
+ * @param [out] const bool address_type_random
+ * A public device address or a random address.
+ * @param[out] const twicBdaddr_t *const identity
+ * Bluetooth device address.
+ * @param[out] const bool erase
+ * Elimination or maintenance of the keyring.
+ * @param[out] twicUtKeyring_t *keyring
+ * Keyring.
+ */
 extern void twicUtStoreBondingInformation(const bool address_type_random,
                                           const twicBdaddr_t *const identity,
                                           const bool erase,
                                           twicUtKeyring_t *keyring);
+/* @brief Read the bonding information.
+ *
+ * This API must be provided by such application which need the
+ * authentication and the encryption to store the bonding information.
+ *
+ * @param [out] twicUtKeyring_t *keyring
+ * Keyring
+ * @return true
+ * The keyring exists
+ * @return false
+ * The keyring does not exist
+ */
 extern bool twicUtReadBondingInformation(twicUtKeyring_t *keyring);
+
+/* @brief Read the passkey entry.
+ *
+ * This API must be provided by such application which need the
+ * authentication and the encryption to store the bonding information.
+ *
+ * Copy the passkey to the argument "pass" if the application allows
+ * to input it.  If grant the requirement of the passkey entry, please
+ * return with "true".  Otherwise please return with "false".
+ *
+ * @param [out] twicPasskeyEntry_t *pass	Passkey Entry
+ * @return true	Apply and Grant the passkey entry
+ * @return false	Refuse the requirement
+ * @note
+ * 000,000 to 999,999. ex) 123456 is 0x0001E240 = {0x40, 0xE2, 0x01, 0x00}
+ */
+extern bool twicUtReadPasskeyEntry(twicPasskeyEntry_t *pass);
 
 #endif /* __TWIC_UTIL_LESMP_H__ */
 
